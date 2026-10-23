@@ -1,0 +1,90 @@
+# Pipeline del Service Desk.
+# Regla 1: solo se publica la rama main.
+# Regla 2: nada se publica sin pasar antes la validación.
+
+name: CI/CD
+
+on:
+  # Valida cada pull request que apunta a main, antes de poder unirlo.
+  pull_request:
+    branches: [main]
+  # Valida otra vez y publica cuando algo llega a main.
+  push:
+    branches: [main]
+
+# Si llegan dos ejecuciones para la misma rama, en un pull request se cancela
+# la vieja porque ya no importa. En main no se cancela, para no cortar un
+# despliegue a la mitad.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# Permiso mínimo: el pipeline solo necesita leer el código.
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validar
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v4
+
+      - name: Instalar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      # npm ci instala exactamente lo de package-lock.json y falla si no
+      # coincide con package.json.
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Verificar tipos
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+
+  deploy:
+    name: Desplegar a producción
+    # Solo corre si validate terminó bien.
+    needs: validate
+    # Solo en push a main. En pull requests este trabajo se omite.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    # Registra cada despliegue en la sección Environments de GitHub.
+    environment:
+      name: production
+    # La CLI de Vercel lee estas dos variables para saber a qué proyecto publicar.
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v4
+
+      - name: Instalar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Instalar la CLI de Vercel
+        run: npm install --global vercel@latest
+
+      # Trae la configuración y las variables de entorno de producción del proyecto.
+      - name: Descargar la configuración de Vercel
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      # Construye en este runner con el formato que espera Vercel.
+      - name: Construir para Vercel
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      # Sube lo ya construido. Vercel no vuelve a construir.
+      - name: Publicar
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
