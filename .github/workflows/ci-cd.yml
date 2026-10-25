@@ -73,6 +73,26 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24
+          cache: npm
+
+      # Hace falta para la CLI de Prisma y para correr el seed.
+      - name: Instalar dependencias
+        run: npm ci
+
+      # Primero la base y después el código, para que la versión nueva nunca
+      # corra contra tablas viejas. Si una migración falla, no se publica.
+      - name: Aplicar migraciones
+        run: npx prisma migrate deploy
+        env:
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+
+      # Mantiene las reglas y el catálogo de la base igual a los del código.
+      # Es idempotente: no duplica nada ni toca usuarios que ya existen.
+      - name: Cargar reglas del servicio
+        run: npx prisma db seed
+        env:
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          SEED_PASSWORD: ${{ secrets.SEED_PASSWORD }}
 
       - name: Instalar la CLI de Vercel
         run: npm install --global vercel@latest

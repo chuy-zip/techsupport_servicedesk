@@ -6,3 +6,324 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+// ---------------------------------------------------------------------------
+// Enumeraciones
+// ---------------------------------------------------------------------------
+
+enum Role {
+  CLIENT
+  AGENT
+  SUPERVISOR
+  ADMIN
+}
+
+enum TicketType {
+  INCIDENT
+  SERVICE_REQUEST
+}
+
+enum ServiceKind {
+  CORE
+  SUPPORT
+  ATTENTION
+}
+
+enum Impact {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum Urgency {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum Priority {
+  P1
+  P2
+  P3
+  P4
+  P5
+}
+
+// Ciclo de vida de la Fase 1: OPEN, IN_PROGRESS, RESOLVED, CLOSED, con la rama ESCALATED
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  ESCALATED
+  RESOLVED
+  CLOSED
+}
+
+enum TicketEventKind {
+  CREATED
+  STATUS_CHANGED
+  ASSIGNED
+  PRIORITY_CHANGED
+  LEVEL_CHANGED
+  APPROVED
+  PROBLEM_LINKED
+}
+
+// Flujo de gestión de problemas de la Fase 1, más el cierre
+enum ProblemStatus {
+  IDENTIFIED
+  DIAGNOSING
+  KNOWN_ERROR
+  SOLUTION_PROPOSED
+  CLOSED
+}
+
+// ---------------------------------------------------------------------------
+// Reglas del servicio. Son datos y no código, para que coincidan con la Fase 1
+// ---------------------------------------------------------------------------
+
+// VIP o Normal. Cada tipo trae su horario y sus tiempos de respuesta
+model ClientType {
+  id   String @id @default(cuid())
+  code String @unique
+  name String
+
+  // Prioridad mínima de sus tickets. VIP no baja de P2
+  minPriority Priority?
+
+  // Horario de atención humana. Fuera de él, el reloj de SLA se detiene
+  alwaysAttended Boolean
+  workingDays    Int[] // 1 lunes ... 7 domingo
+  dayStartMinute Int? // minutos desde medianoche, 420 son las 07:00
+  dayEndMinute   Int?
+
+  // Primera respuesta, en minutos de atención: compromiso con el cliente y objetivo interno
+  responseCommitMinutes Int
+  responseAlertMinutes  Int
+
+  // Sin resolver a este tiempo, se escala
+  escalationMinutes Int
+  escalateTo        Role
+  escalateToLevel   Int?
+
+  companies    Company[]
+  catalogItems CatalogItem[]
+}
+
+// Fila de la matriz de impacto por urgencia
+model PriorityRule {
+  impact   Impact
+  urgency  Urgency
+  priority Priority
+
+  @@id([impact, urgency])
+}
+
+// Tiempos por prioridad, en minutos de atención según el tipo de cliente
+model PriorityLevel {
+  priority Priority @id
+  name     String
+
+  responseMinutes    Int?
+  resolutionMinutes  Int?
+  updateEveryMinutes Int?
+
+  // Texto tal como lo dice la Fase 1, para mostrarlo en pantalla
+  responseLabel   String
+  resolutionLabel String
+}
+
+// Servicios de TechSupport Pro, las categorías del Service Desk
+model Service {
+  id          String      @id @default(cuid())
+  code        String      @unique
+  name        String
+  description String
+  kind        ServiceKind
+  sortOrder   Int
+
+  items    CatalogItem[]
+  problems Problem[]
+}
+
+// Elementos del catálogo: I-1 a I-12 y S-1 a S-5
+model CatalogItem {
+  id         String     @id @default(cuid())
+  code       String     @unique
+  name       String
+  type       TicketType
+  serviceId  String
+  service    Service    @relation(fields: [serviceId], references: [id])
+  reportedBy String
+  sortOrder  Int
+
+  // Valores sugeridos para el caso típico. El formulario puede ajustarlos
+  defaultImpact  Impact
+  defaultUrgency Urgency
+
+  // Si tiene valor, solo los clientes de ese tipo lo ven. I-1 es solo VIP e I-2 solo Normal
+  clientTypeId String?
+  clientType   ClientType? @relation(fields: [clientTypeId], references: [id])
+
+  // Si tiene valor, el formulario hace esta pregunta y un sí exige autorización antes de atender
+  approvalQuestion String?
+
+  active  Boolean  @default(true)
+  tickets Ticket[]
+}
+
+// ---------------------------------------------------------------------------
+// Personas
+// ---------------------------------------------------------------------------
+
+// Empresa cliente. El tipo VIP o Normal pertenece a la empresa, no al usuario
+model Company {
+  id           String     @id @default(cuid())
+  name         String     @unique
+  clientTypeId String
+  clientType   ClientType @relation(fields: [clientTypeId], references: [id])
+
+  users   User[]
+  tickets Ticket[]
+}
+
+model User {
+  id           String  @id @default(cuid())
+  email        String  @unique
+  name         String
+  passwordHash String
+  role         Role
+  active       Boolean @default(true)
+
+  // Solo para AGENT: nivel 1, 2 o 3
+  supportLevel Int?
+
+  // Solo para CLIENT: la empresa a la que pertenece
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  requestedTickets Ticket[]      @relation("requester")
+  assignedTickets  Ticket[]      @relation("assignee")
+  approvedTickets  Ticket[]      @relation("approver")
+  comments         Comment[]
+  events           TicketEvent[]
+  ownedProblems    Problem[]
+}
+
+// ---------------------------------------------------------------------------
+// Tickets
+// ---------------------------------------------------------------------------
+
+model Ticket {
+  id     String @id @default(cuid())
+  number Int    @unique @default(autoincrement())
+
+  title       String
+  description String
+  tags        String[]
+
+  // El tipo se copia del elemento del catálogo al crear el ticket
+  type          TicketType
+  catalogItemId String
+  catalogItem   CatalogItem @relation(fields: [catalogItemId], references: [id])
+
+  // La prioridad la calcula el servidor con la matriz; nunca la manda el navegador
+  impact   Impact
+  urgency  Urgency
+  priority Priority
+
+  status TicketStatus @default(OPEN)
+  level  Int          @default(1)
+
+  requesterId String
+  requester   User    @relation("requester", fields: [requesterId], references: [id])
+  companyId   String
+  company     Company @relation(fields: [companyId], references: [id])
+  assigneeId  String?
+  assignee    User?   @relation("assignee", fields: [assigneeId], references: [id])
+
+  // Solicitudes que necesitan autorización de SUPERVISOR o ADMIN. Sin ella no pasan a IN_PROGRESS
+  requiresApproval Boolean   @default(false)
+  approvedById     String?
+  approvedBy       User?     @relation("approver", fields: [approvedById], references: [id])
+  approvedAt       DateTime?
+
+  // Problema al que pertenece, cuando varios incidentes comparten la misma causa raíz
+  problemId String?
+  problem   Problem? @relation(fields: [problemId], references: [id], onDelete: SetNull)
+
+  // Vencimientos calculados al crear, para que el SLA quede guardado y no solo en lógica
+  responseDueAt   DateTime?
+  resolutionDueAt DateTime?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  firstResponseAt DateTime?
+  resolvedAt      DateTime?
+  closedAt        DateTime?
+
+  comments Comment[]
+  events   TicketEvent[]
+
+  @@index([status, priority])
+  @@index([companyId])
+  @@index([assigneeId])
+  @@index([problemId])
+}
+
+// Gestión de problemas: la causa raíz detrás de incidentes recurrentes
+model Problem {
+  id     String @id @default(cuid())
+  number Int    @unique @default(autoincrement())
+
+  title       String
+  description String
+  status      ProblemStatus @default(IDENTIFIED)
+  rootCause   String?
+  workaround  String?
+
+  serviceId String?
+  service   Service? @relation(fields: [serviceId], references: [id])
+
+  // Agente de nivel 2 o 3, o supervisor, que lo investiga
+  ownerId String?
+  owner   User?   @relation(fields: [ownerId], references: [id])
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  closedAt  DateTime?
+
+  tickets Ticket[]
+}
+
+model Comment {
+  id       String @id @default(cuid())
+  ticketId String
+  ticket   Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id])
+  body     String
+
+  // Nota interna del equipo de soporte, el cliente no la ve
+  internal Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([ticketId])
+}
+
+// Historial de cambios. De aquí sale, por ejemplo, la primera transición a IN_PROGRESS que mide el SLO 2
+model TicketEvent {
+  id        String          @id @default(cuid())
+  ticketId  String
+  ticket    Ticket          @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  actorId   String?
+  actor     User?           @relation(fields: [actorId], references: [id])
+  kind      TicketEventKind
+  fromValue String?
+  toValue   String?
+  createdAt DateTime        @default(now())
+
+  @@index([ticketId])
+}
