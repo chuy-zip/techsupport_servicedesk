@@ -86,9 +86,12 @@ De la Fase 1: OPEN, IN_PROGRESS, RESOLVED y CLOSED en ese orden, y ESCALATED des
 
 Pendientes, en orden. Al tomar uno, anotar el nombre de quien lo hace.
 
-1. **Tablero.** `/tablero` para el personal, con columnas por estado, orden por prioridad y tiempo restante, y el medidor de SLA. Responsable:
+1. **Tablero.** `/tablero` para el personal, con columnas Abierto, En progreso, Escalado, Resuelto y Cerrado. Cada tarjeta con servicio, prioridad y medidor de SLA, ordenadas por prioridad y tiempo restante. Responsable:
 2. **Edición.** Cambiar estado y nivel, asignar, reclasificar impacto y urgencia recalculando prioridad, y aprobar solicitudes. Cada cambio crea un `TicketEvent`. Responsable:
-3. **Comentarios.** En el detalle, con notas internas que el cliente no ve, y cierre confirmado por el cliente. Responsable:
-4. **Problemas.** Ligar incidentes a un problema y seguir su flujo, como pide el objetivo del enunciado. Responsable:
-5. **Estadísticas.** Tickets por servicio, por prioridad y por tipo. Responsable:
-6. **Demo.** Datos de ejemplo, borrar los tickets de prueba de `dev` y guion. Responsable:
+3. **Comentarios.** En el detalle, con autor y fecha, notas internas que el cliente no ve, y cierre confirmado por el cliente. Responsable:
+4. **Etiquetas.** Campo opcional al crear el ticket, visible en el detalle y en el tablero. El modelo ya tiene `tags`; las imágenes de referencia del enunciado las usan. Responsable:
+5. **Estadísticas.** Tickets por servicio, que es la categoría que pide el enunciado, y por etiqueta, prioridad y tipo. Responsable:
+6. **Problemas en el sistema.** Ligar incidentes a un problema y seguir su flujo. Responsable:
+7. **Análisis de gestión de problemas.** Documento que mapea los problemas probables de cada servicio: causa raíz posible, incidentes que lo delatan y workaround. Lo pide un objetivo del enunciado y no es una pantalla. Responsable:
+8. **Demo.** Datos de ejemplo, borrar los tickets de prueba de `dev` y guion. Responsable:
+9. **Presentación en clase.** Vale el 25%. Debe justificar el catálogo y las prioridades, y mostrar los ajustes a la Fase 1 como mejora continua. Responsable:
