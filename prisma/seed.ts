@@ -20,7 +20,7 @@ const db = new PrismaClient({
   adapter: new PrismaNeon({ connectionString: process.env.DIRECT_URL }),
 });
 
-// Tipos de cliente según el SLA de la Fase 1, con los ajustes de docs/plan/propuesta-catalogo.md
+// Tipos de cliente según el SLA de la Fase 1, con los ajustes aprobados por el equipo
 const clientTypes = [
   {
     code: "VIP",
@@ -166,7 +166,7 @@ type Item = {
   approvalQuestion?: string;
 };
 
-// Catálogo aprobado en docs/plan/propuesta-catalogo.md, en el orden de esa tabla
+// Catálogo aprobado por el equipo, agrupado por servicio
 const catalog: Item[] = [
   { code: "I-5", service: "AUTH", name: "Nadie puede iniciar sesión", type: "INCIDENT", reportedBy: "Cualquier usuario", impact: "HIGH", urgency: "HIGH" },
   { code: "I-6", service: "AUTH", name: "Un usuario no puede iniciar sesión", type: "INCIDENT", reportedBy: "El usuario afectado", impact: "LOW", urgency: "MEDIUM" },

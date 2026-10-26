@@ -1,26 +1,67 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* Solo tokens y estilos base. Los estilos de cada pieza viven en su componente de src/components/ui */
+@theme {
+  --color-olive: #556b2f;
+  --color-olive-dark: #3f5022;
+  --color-lime: #d6f29b;
+  --color-ink: #2b2e26;
+  --color-muted: #62665c;
+  --color-line: #e3e5dd;
+  --color-canvas: #f5f6f1;
+  --color-surface: #ffffff;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-p1: #9f1d14;
+  --color-p1-bg: #fbe4e1;
+  --color-p2: #9a4a0b;
+  --color-p2-bg: #fcebd9;
+  --color-p3: #7a5a06;
+  --color-p3-bg: #faf0cc;
+  --color-p4: #35556e;
+  --color-p4-bg: #e3edf4;
+  --color-p5: #62665c;
+  --color-p5-bg: #ecede8;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  --font-display: var(--font-baskerville), Georgia, serif;
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+
+  --text-label: 11px;
+  --text-caption: 13px;
+  --text-body: 15px;
+  --text-title: 30px;
+  --text-hero: 44px;
+
+  --radius-control: 10px;
+  --radius-card: 16px;
+
+  --shadow-card: 0 1px 2px rgb(43 46 38 / 0.04), 0 4px 12px rgb(43 46 38 / 0.05), 0 12px 28px rgb(43 46 38 / 0.04);
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-enter: enter 500ms var(--ease-out-expo) both;
+
+  @keyframes enter {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer base {
+  body {
+    @apply bg-canvas font-sans text-body text-ink;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-olive;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }
