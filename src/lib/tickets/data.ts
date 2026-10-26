@@ -1,7 +1,8 @@
 import "server-only";
-import type { ClientType, Ticket } from "@/generated/prisma/client";
+import type { ClientType, Impact, Priority, Ticket, Urgency } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
-import { slaProgress, type SlaProgress } from "@/lib/tickets/sla";
+import { applyPriorityFloor } from "@/lib/tickets/priority";
+import { addAttentionMinutes, attentionMinutesBetween, slaProgress, type SlaProgress } from "@/lib/tickets/sla";
 
 // Servicios con los elementos del catálogo que puede ver un tipo de cliente.
 // I-1 es solo para VIP e I-2 solo para Normal; el resto es para todos
@@ -22,20 +23,56 @@ export async function getCatalogFor(clientTypeCode: string) {
 
 export type CatalogService = Awaited<ReturnType<typeof getCatalogFor>>[number];
 
-// El plazo que corre ahora: primero la respuesta y, ya respondido, la resolución
+// Prioridad con la matriz y el piso del cliente, y vencimientos contados desde `from` con su reloj.
+// La usan tanto la creación como la reclasificación, para que no haya dos versiones de la regla
+export async function classify(impact: Impact, urgency: Urgency, clientType: ClientType, from: Date) {
+  const rule = await db.priorityRule.findUniqueOrThrow({ where: { impact_urgency: { impact, urgency } } });
+  const priority: Priority = applyPriorityFloor(rule.priority, clientType.minPriority);
+  const level = await db.priorityLevel.findUniqueOrThrow({ where: { priority } });
+  const due = (minutes: number | null) => (minutes === null ? null : addAttentionMinutes(from, minutes, clientType));
+  return {
+    priority,
+    responseDueAt: due(level.responseMinutes),
+    resolutionDueAt: due(level.resolutionMinutes),
+  };
+}
+
+type SlaFields = Pick<Ticket, "createdAt" | "firstResponseAt" | "resolvedAt" | "responseDueAt" | "resolutionDueAt">;
+
+// El vencimiento que corre ahora: primero la respuesta y, ya respondido, la resolución
+export function currentDue(ticket: SlaFields) {
+  if (ticket.resolvedAt) return null;
+  return ticket.firstResponseAt ? ticket.resolutionDueAt : ticket.responseDueAt;
+}
+
 export function currentSla(
-  ticket: Pick<Ticket, "createdAt" | "firstResponseAt" | "resolvedAt" | "responseDueAt" | "resolutionDueAt">,
+  ticket: SlaFields,
   clientType: ClientType,
   now: Date,
 ): { label: string; progress: SlaProgress } | null {
-  if (ticket.resolvedAt) return null;
-
-  const alertRatio = clientType.responseAlertMinutes / clientType.responseCommitMinutes;
-  const due = ticket.firstResponseAt ? ticket.resolutionDueAt : ticket.responseDueAt;
+  const due = currentDue(ticket);
   if (!due) return null;
 
+  const alertRatio = clientType.responseAlertMinutes / clientType.responseCommitMinutes;
   return {
     label: ticket.firstResponseAt ? "Resolución" : "Primera respuesta",
     progress: slaProgress(ticket.createdAt, due, now, clientType, alertRatio),
   };
+}
+
+// Aviso de la matriz de escalamiento de la Fase 1. Vercel Hobby no permite tareas frecuentes,
+// así que se calcula al consultar en vez de dispararse solo
+export function escalationAlert(
+  ticket: Pick<Ticket, "createdAt" | "resolvedAt" | "level" | "status">,
+  clientType: ClientType,
+  now: Date,
+): string | null {
+  if (ticket.resolvedAt || ticket.status === "RESOLVED" || ticket.status === "CLOSED") return null;
+  if (attentionMinutesBetween(ticket.createdAt, now, clientType) < clientType.escalationMinutes) return null;
+
+  if (clientType.escalateTo === "AGENT" && clientType.escalateToLevel && ticket.level < clientType.escalateToLevel) {
+    return `Escalar a nivel ${clientType.escalateToLevel}`;
+  }
+  if (clientType.escalateTo === "SUPERVISOR") return "Avisar a supervisión";
+  return null;
 }

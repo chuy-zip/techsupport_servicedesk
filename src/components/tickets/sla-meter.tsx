@@ -16,7 +16,7 @@ export function SlaMeter({ label, progress }: { label: string; progress: SlaProg
 
   return (
     <div className="flex flex-col gap-1.5">
-      <div className="flex items-baseline justify-between gap-4 text-caption">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 text-caption">
         <span className="text-muted">{label}</span>
         <span className={`font-semibold tabular-nums ${progress.state === "ok" ? "text-ink" : progress.state === "warning" ? "text-p2" : "text-p1"}`}>
           {text}
