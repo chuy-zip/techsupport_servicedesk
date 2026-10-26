@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { PriorityBadge, StatusBadge } from "@/components/tickets/badges";
@@ -24,7 +25,9 @@ export default function InicioPage() {
 
 async function Home() {
   const user = await getCurrentUser();
-  return user.role === "CLIENT" ? <ClientHome user={user} /> : <StaffHome user={user} />;
+  // El personal trabaja desde el tablero
+  if (user.role !== "CLIENT") redirect("/tablero");
+  return <ClientHome user={user} />;
 }
 
 async function ClientHome({ user }: { user: CurrentUser }) {
@@ -80,18 +83,6 @@ async function ClientHome({ user }: { user: CurrentUser }) {
           </ul>
         </Card>
       )}
-    </>
-  );
-}
-
-function StaffHome({ user }: { user: CurrentUser }) {
-  return (
-    <>
-      <h1 className="font-display text-title leading-tight font-bold">Hola, {user.name}</h1>
-      <p className="mt-3 max-w-prose text-muted">
-        El tablero para atender la cola de tickets está en construcción. Por ahora los tickets se reportan desde las
-        cuentas de cliente.
-      </p>
     </>
   );
 }

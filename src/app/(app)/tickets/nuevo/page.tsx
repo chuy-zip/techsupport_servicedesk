@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { BackLink } from "@/components/ui/back-link";
 import { Card } from "@/components/ui/card";
@@ -35,6 +36,8 @@ export default function NewTicketPage() {
 }
 
 async function Form() {
+  // Consultar la base abre conexiones con valores aleatorios; se marca como contenido de cada petición
+  await connection();
   const user = await getCurrentUser();
   if (user.role !== "CLIENT" || !user.clientTypeCode) {
     return <p className="mt-8 text-muted">Los tickets se reportan desde una cuenta de cliente.</p>;
@@ -64,6 +67,7 @@ async function Form() {
 
 // Explica con los datos reales de la cuenta cómo se va a priorizar el reporte
 async function PriorityGuide() {
+  await connection();
   const user = await getCurrentUser();
   if (!user.clientTypeCode) return null;
 

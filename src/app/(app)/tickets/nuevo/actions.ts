@@ -4,8 +4,7 @@ import { redirect } from "next/navigation";
 import * as z from "zod";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { applyPriorityFloor } from "@/lib/tickets/priority";
-import { addAttentionMinutes } from "@/lib/tickets/sla";
+import { classify } from "@/lib/tickets/data";
 
 const levels = ["HIGH", "MEDIUM", "LOW"] as const;
 
@@ -72,14 +71,9 @@ export async function createTicket(_state: CreateTicketState, formData: FormData
   if (item.approvalQuestion && !data.approval) errors.approval = "Responde esta pregunta.";
   if (!impact || !urgency || Object.keys(errors).length > 0) return { errors };
 
-  const rule = await db.priorityRule.findUniqueOrThrow({ where: { impact_urgency: { impact, urgency } } });
-  const priority = applyPriorityFloor(rule.priority, company.clientType.minPriority);
-  const level = await db.priorityLevel.findUniqueOrThrow({ where: { priority } });
-
-  // Los vencimientos corren con el reloj del tipo de cliente
+  // Prioridad con la matriz y el piso del cliente; vencimientos con su reloj
   const now = new Date();
-  const due = (minutes: number | null) =>
-    minutes === null ? null : addAttentionMinutes(now, minutes, company.clientType);
+  const { priority, responseDueAt, resolutionDueAt } = await classify(impact, urgency, company.clientType, now);
 
   const ticket = await db.ticket.create({
     data: {
@@ -93,8 +87,8 @@ export async function createTicket(_state: CreateTicketState, formData: FormData
       requesterId: user.id,
       companyId: company.id,
       requiresApproval: item.approvalQuestion !== null && data.approval === "yes",
-      responseDueAt: due(level.responseMinutes),
-      resolutionDueAt: due(level.resolutionMinutes),
+      responseDueAt,
+      resolutionDueAt,
       createdAt: now,
       events: { create: { kind: "CREATED", actorId: user.id, toValue: priority } },
     },
