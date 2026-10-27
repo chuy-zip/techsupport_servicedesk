@@ -213,9 +213,3 @@ Opcional, solo si sobra tiempo:
 
 * **Pruebas unitarias de las reglas puras.** El reloj de SLA, el piso VIP, el cálculo de prioridad y vencimientos, el ciclo de vida y las etiquetas. Son rápidas y no necesitan base de datos. Se pueden sumar al pipeline. Las pruebas de navegador quedan fuera: `casos-de-uso.md` sirve como lista para repasar a mano antes de la demostración.
 * **Revisar las pantallas en móvil.**
-
-Por decidir con el equipo:
-
-* **El catálogo pasó de 17 a 23 elementos** con los "Otro". El equipo aprobó 17.
-* **Qué más requiere aprobación de forma predefinida.** Hoy solo S-3. S-5 cambia lo acordado con el cliente, y una baja de usuario no está en el catálogo.
-* **Límite de intentos de inicio de sesión** en el firewall de Vercel. Opcional.
