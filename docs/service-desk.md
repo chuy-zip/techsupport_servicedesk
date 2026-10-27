@@ -201,14 +201,18 @@ La clasificación se oculta porque un cliente que ve su caso marcado como urgenc
 
 **Hecho:** login, creación de tickets con prioridad y vencimientos, etiquetas, "Otro", tablero con filtros, edición con notas obligatorias, escalamiento, aprobaciones, comentarios y vista del cliente. Los datos de demostración, con 24 tickets, están en `prisma/seed-demo.ts`; ver `infraestructura.md`.
 
-Pendientes, en orden. Al tomar uno, anotar el nombre de quien lo hace.
+Pendientes, en orden.
 
-1. **Estadísticas.** Gráficas de tickets por servicio, que es la categoría que pide el enunciado, y por etiqueta, prioridad y tipo. Los datos de demostración ya reparten tickets en los seis servicios. Responsable:
-2. **Problemas en el sistema.** Ligar incidentes a un problema y seguir su flujo, para agentes de nivel 2 o 3 y supervisión. El modelo ya existe; falta la pantalla. Responsable:
-3. **Análisis de gestión de problemas.** Documento que mapea los problemas probables de cada servicio: causa raíz posible, incidentes que lo delatan y workaround. Lo pide un objetivo del enunciado y no es una pantalla. Responsable:
-4. **Guion de la demostración.** El recorrido con los datos de demostración está en `casos-de-uso.md`; falta el guion con el orden y el tiempo de cada parte. Responsable:
-5. **Presentación en clase.** Vale el 25%. Debe justificar el catálogo y las prioridades, y mostrar los ajustes a la Fase 1 como mejora continua. Responsable:
-6. **Pruebas automáticas.** Convertir los casos de `casos-de-uso.md` en pruebas dentro del repositorio, por ejemplo con Playwright, y sumarlas al pipeline. Revisar también las pantallas en móvil. Responsable:
+1. **Estadísticas.** Gráficas de tickets por servicio, que es la categoría que pide el enunciado, y por etiqueta, prioridad y tipo. Los datos de demostración ya reparten tickets en los seis servicios.
+2. **Problemas en el sistema.** Ligar incidentes a un problema y seguir su flujo, para agentes de nivel 2 o 3 y supervisión. El modelo ya existe; falta la pantalla.
+3. **Análisis de gestión de problemas.** Documento que mapea los problemas probables de cada servicio: causa raíz posible, incidentes que lo delatan y workaround. Lo pide un objetivo del enunciado y no es una pantalla.
+4. **Guion de la demostración.** El recorrido con los datos de demostración está en `casos-de-uso.md`; falta el guion con el orden y el tiempo de cada parte.
+5. **Presentación en clase.** Vale el 25%. Debe justificar el catálogo y las prioridades, y mostrar los ajustes a la Fase 1 como mejora continua.
+
+Opcional, solo si sobra tiempo:
+
+* **Pruebas unitarias de las reglas puras.** El reloj de SLA, el piso VIP, el cálculo de prioridad y vencimientos, el ciclo de vida y las etiquetas. Son rápidas y no necesitan base de datos. Se pueden sumar al pipeline. Las pruebas de navegador quedan fuera: `casos-de-uso.md` sirve como lista para repasar a mano antes de la demostración.
+* **Revisar las pantallas en móvil.**
 
 Por decidir con el equipo:
 
