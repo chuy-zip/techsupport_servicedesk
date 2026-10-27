@@ -8,12 +8,16 @@ Está en [`docs/`](docs/README.md): reglas del servicio y pendientes, infraestru
 
 ## Desarrollo local
 
-Requiere Node.js 24 y un `.env.local` armado a partir de `.env.example`. Los detalles están en `docs/infraestructura.md`.
+Requiere Node.js 24 y un `.env.local` armado a partir de `.env.example`. Los detalles y los usuarios de demostración para probar cada rol están en [`docs/infraestructura.md`](docs/infraestructura.md#usuarios-de-demostración).
 
 ```bash
 npm ci          # instala dependencias y genera el cliente de Prisma
 npm run dev     # servidor de desarrollo en http://localhost:3000
 ```
+
+## Datos de demostración
+
+`npm run seed:demo` crea 24 tickets de ejemplo en todos los estados para mostrar el sistema, y permite volver siempre al mismo punto de partida. Sin `--yes` solo muestra qué haría. Los detalles y las advertencias están en [`docs/infraestructura.md`](docs/infraestructura.md#datos-de-demostración).
 
 ## Validación
 

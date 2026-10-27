@@ -61,6 +61,30 @@ Las etiquetas en mayúsculas nombran algo real, como el servicio o la sección. 
 * **Fichas.** Forma de píldora, para categoría, prioridad y estado.
 * **Errores.** Texto en el rojo de P1, que diga qué pasó y cómo seguir.
 
+## Piezas ya hechas
+
+Antes de crear una pieza, revisar si ya existe. Todas están en `src/components`.
+
+| Pieza | Para qué |
+|---|---|
+| `ui/button` | `Button` y `ButtonLink`, con las variantes principal y secundaria |
+| `ui/text-field` | `TextField` y `TextArea`, con etiqueta, ayuda y error |
+| `ui/select-field` | `SelectField`, con la caja y la flecha compartidas con los desplegables hechos a mano |
+| `ui/choice` | Opciones de radio con aspecto de tarjeta, y su grupo con pregunta |
+| `ui/card` | Tarjeta con borde y sombra |
+| `ui/eyebrow` | Etiqueta pequeña en mayúsculas sobre un título |
+| `ui/back-link` | Enlace con flecha para volver a la pantalla anterior |
+| `ui/action-form` | Formulario de una acción de servidor que muestra su error y evita dobles envíos |
+| `tickets/badges` | Prioridad, estado y etiqueta de un ticket |
+| `tickets/sla-meter` | Medidor de SLA del personal |
+| `tickets/client-commitment` | Fecha comprometida que ve el cliente, en lugar del medidor |
+| `tickets/ticket-card` | Tarjeta del tablero |
+| `tickets/comment-thread` | Hilo de comentarios tipo chat: los propios a la derecha, en verde claro |
+
+* **Los desplegables se ven igual.** El select y el desplegable de clientes comparten la caja y la flecha, sin animación.
+* **Números junto a un nombre** van en una pastilla oscura, como la carga por agente, para no confundirlos con el texto.
+* **Lo que ve el cliente** no usa semáforo ni la clasificación interna; ver `service-desk.md`.
+
 ## Movimiento
 
 * **Portada y login.** Solo una entrada: el contenido sube 12 px y aparece en 500 ms con la curva `cubic-bezier(0.16, 1, 0.3, 1)`.

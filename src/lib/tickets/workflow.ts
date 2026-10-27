@@ -1,4 +1,4 @@
-import type { Role, TicketStatus } from "@/generated/prisma/client";
+import type { CommentKind, Role, TicketStatus } from "@/generated/prisma/client";
 
 export const STAFF_ROLES: Role[] = ["AGENT", "SUPERVISOR", "ADMIN"];
 export const APPROVER_ROLES: Role[] = ["SUPERVISOR", "ADMIN"];
@@ -38,3 +38,28 @@ export function canHandle(agentLevel: number | null, ticketLevel: number) {
 export function canWork(user: { role: Role; supportLevel: number | null }, ticketLevel: number) {
   return user.role !== "AGENT" || canHandle(user.supportLevel, ticketLevel);
 }
+
+// Notas obligatorias al mover un ticket. Se guardan como comentario en la misma transacción que el cambio
+export type NoteRule = { prompt: string; internal: boolean; kind: CommentKind };
+
+export function statusNote(from: TicketStatus, to: TicketStatus): NoteRule | null {
+  // La solución la ve el cliente: le explica qué se hizo y sirve para pedirle confirmación
+  if (to === "RESOLVED") return { prompt: "¿Qué se hizo para resolverlo?", internal: false, kind: "RESOLUTION" };
+  // Evidencia del cierre que pide la Fase 1, para el equipo
+  if (to === "CLOSED") return { prompt: "¿Cómo se confirmó con el cliente?", internal: true, kind: "CLOSURE" };
+  // Pública: el cliente ve que su ticket volvió a En progreso y necesita saber por qué
+  if (from === "RESOLVED" && to === "IN_PROGRESS") {
+    return { prompt: "¿Por qué se reabre?", internal: false, kind: "REOPENING" };
+  }
+  return null;
+}
+
+// Cuando el caso es delicado y el catálogo no lo previó, quien lo atiende pide la autorización
+export const APPROVAL_NOTE: NoteRule = {
+  prompt: "¿Por qué necesita autorización?",
+  internal: true,
+  kind: "APPROVAL_REQUEST",
+};
+
+// Para que el nivel siguiente sepa qué se intentó antes
+export const ESCALATION_NOTE: NoteRule = { prompt: "¿Por qué se escala?", internal: true, kind: "ESCALATION" };

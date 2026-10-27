@@ -49,16 +49,18 @@ erDiagram
         ServiceKind kind "CORE SUPPORT ATTENTION"
     }
     CatalogItem {
-        string code UK "I-1 a I-12, S-1 a S-5"
+        string code UK "I-1 a I-18, S-1 a S-5"
         TicketType type
         string serviceId FK
         string clientTypeId FK "opcional"
         Impact defaultImpact
         Urgency defaultUrgency
         string approvalQuestion "opcional"
+        boolean isOther "Otro de cada servicio"
     }
     Ticket {
-        int number UK "folio"
+        int number UK "número del ticket"
+        string_array tags "máximo 5"
         TicketType type
         string catalogItemId FK
         Impact impact
@@ -82,6 +84,7 @@ erDiagram
         string ticketId FK
         string authorId FK
         boolean internal "solo personal"
+        CommentKind kind "NOTE o nota de una acción"
     }
     TicketEvent {
         string ticketId FK
@@ -113,6 +116,20 @@ erDiagram
 
 Todas las tablas usan un `id` de texto como llave primaria, salvo `PriorityRule` y `PriorityLevel`; el diagrama lo omite.
 
+## Enumeraciones
+
+| Nombre | Valores |
+|---|---|
+| `Role` | CLIENT, AGENT, SUPERVISOR, ADMIN |
+| `TicketType` | INCIDENT, SERVICE_REQUEST |
+| `TicketStatus` | OPEN, IN_PROGRESS, ESCALATED, RESOLVED, CLOSED |
+| `Impact` y `Urgency` | HIGH, MEDIUM, LOW |
+| `Priority` | P1 a P5 |
+| `ServiceKind` | CORE, SUPPORT, ATTENTION |
+| `CommentKind` | NOTE, RESOLUTION, REOPENING, CLOSURE, ESCALATION, APPROVAL_REQUEST |
+| `TicketEventKind` | CREATED, STATUS_CHANGED, ASSIGNED, PRIORITY_CHANGED, LEVEL_CHANGED, APPROVED, PROBLEM_LINKED, CATEGORY_CHANGED, APPROVAL_REQUESTED |
+| `ProblemStatus` | IDENTIFIED, DIAGNOSING, KNOWN_ERROR, SOLUTION_PROPOSED, CLOSED |
+
 ## Grupos de tablas
 
 * **Reglas del servicio.** `ClientType`, `PriorityRule`, `PriorityLevel`, `Service` y `CatalogItem`. Las carga `prisma/seed.ts` y el código las lee; no se editan desde la aplicación.
@@ -123,5 +140,9 @@ Todas las tablas usan un `id` de texto como llave primaria, salvo `PriorityRule`
 
 * **`PriorityRule` y `PriorityLevel` no tienen relación con `Ticket`.** La prioridad se calcula al crear el ticket y se guarda en él; las reglas solo se consultan.
 * **El ticket guarda sus vencimientos.** Así el SLA queda como dato y no solo en lógica, que fue una debilidad del backend de TechSupport Pro señalada en la Fase 1.
-* **`TicketEvent` es el historial.** Cada cambio de estado, asignación, prioridad, nivel, aprobación o problema deja un registro. De ahí sale, por ejemplo, la primera transición a IN_PROGRESS que mide el SLO 2.
+* **`TicketEvent` es el historial.** Cada cambio de estado, asignación, prioridad, nivel, elemento del catálogo, aprobación o problema deja un registro, en la misma transacción que el cambio. De ahí sale, por ejemplo, la primera transición a IN_PROGRESS que mide el SLO 2.
+* **`Comment.kind` distingue de dónde sale un comentario.** Un comentario escrito a mano es NOTE; las notas obligatorias de una acción llevan su tipo, para etiquetarlas en el hilo. Que sea pública o interna lo decide `internal`.
+* **`CatalogItem.isOther` marca el "Otro" de cada servicio,** para reconocerlo en la pantalla y, más adelante, en las estadísticas.
+* **`Ticket.tags` es una lista de texto,** ya normalizada al guardarse, que alimentará las estadísticas por etiqueta.
+* **El número del ticket es global,** una sola secuencia para todo el sistema, y no se reutiliza si un ticket se borra.
 * **Borrados.** Al borrar un ticket se borran sus comentarios y eventos. Al borrar un problema, sus tickets quedan sin problema y no se borran.

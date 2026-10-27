@@ -3,14 +3,8 @@ import { Suspense, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { getCurrentUser } from "@/lib/auth";
+import { roleNames } from "@/lib/tickets/labels";
 import { logout } from "../login/actions";
-
-const roleNames = {
-  CLIENT: "Cliente",
-  AGENT: "Agente",
-  SUPERVISOR: "Supervisión",
-  ADMIN: "Administración",
-} as const;
 
 // Marco de las pantallas con sesión. La sesión se lee dentro de un Suspense, no en el layout
 export default function AppLayout({ children }: { children: ReactNode }) {
@@ -74,7 +68,7 @@ async function CurrentUser() {
   return (
     <p className="hidden text-right text-caption leading-tight sm:block">
       <span className="block font-medium">{user.name}</span>
-      <span className="text-muted">{detail}</span>
+      {detail !== user.name && <span className="text-muted">{detail}</span>}
     </p>
   );
 }

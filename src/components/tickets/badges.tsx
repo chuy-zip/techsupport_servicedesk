@@ -21,6 +21,10 @@ export function PriorityBadge({ priority }: { priority: Priority }) {
   );
 }
 
+export function TagChip({ tag }: { tag: string }) {
+  return <span className={`${pill} bg-line/70 font-medium text-muted`}>{tag}</span>;
+}
+
 export function StatusBadge({ status }: { status: TicketStatus }) {
   const resolved = status === "RESOLVED" || status === "CLOSED";
   return (

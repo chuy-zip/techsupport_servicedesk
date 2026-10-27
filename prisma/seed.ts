@@ -163,33 +163,43 @@ type Item = {
   impact: Impact;
   urgency: Urgency;
   onlyFor?: string;
+  other?: true;
   approvalQuestion?: string;
 };
 
-// Catálogo aprobado por el equipo, agrupado por servicio
+// Catálogo aprobado por el equipo, agrupado por servicio. Cada servicio cierra con un "Otro" para lo que
+// no encaja en la lista: el nivel 1 lo reclasifica, y si se repite, es señal de que falta un elemento
 const catalog: Item[] = [
   { code: "I-5", service: "AUTH", name: "Nadie puede iniciar sesión", type: "INCIDENT", reportedBy: "Cualquier usuario", impact: "HIGH", urgency: "HIGH" },
   { code: "I-6", service: "AUTH", name: "Un usuario no puede iniciar sesión", type: "INCIDENT", reportedBy: "El usuario afectado", impact: "LOW", urgency: "MEDIUM" },
   { code: "S-3", service: "AUTH", name: "Alta de un usuario; si es ADMIN, con autorización", type: "SERVICE_REQUEST", reportedBy: "El supervisor o el cliente", impact: "LOW", urgency: "MEDIUM", approvalQuestion: "¿El usuario nuevo tendrá rol ADMIN?" },
+  { code: "I-13", service: "AUTH", name: "Otro problema con la autenticación", type: "INCIDENT", reportedBy: "Cualquier usuario", impact: "MEDIUM", urgency: "MEDIUM", other: true },
   { code: "I-7", service: "TICKETS", name: "No se pueden crear tickets", type: "INCIDENT", reportedBy: "Cualquier usuario", impact: "HIGH", urgency: "HIGH" },
   { code: "I-8", service: "TICKETS", name: "La lista de tickets no carga", type: "INCIDENT", reportedBy: "Agentes y clientes", impact: "HIGH", urgency: "HIGH" },
   { code: "I-4", service: "TICKETS", name: "Un analista no puede cerrar un ticket", type: "INCIDENT", reportedBy: "El analista que atiende los tickets", impact: "LOW", urgency: "MEDIUM" },
   { code: "S-2", service: "TICKETS", name: "Cerrar un ticket ingresado por error", type: "SERVICE_REQUEST", reportedBy: "El cliente", impact: "LOW", urgency: "LOW" },
+  { code: "I-14", service: "TICKETS", name: "Otro problema con la gestión de tickets", type: "INCIDENT", reportedBy: "Cualquier usuario", impact: "MEDIUM", urgency: "MEDIUM", other: true },
   { code: "I-9", service: "EXCEL", name: "La carga falla o se queda procesando", type: "INCIDENT", reportedBy: "Quien carga tickets", impact: "MEDIUM", urgency: "MEDIUM" },
   { code: "I-10", service: "EXCEL", name: "Faltan tickets tras una carga por filas descartadas", type: "INCIDENT", reportedBy: "Quien carga tickets", impact: "MEDIUM", urgency: "MEDIUM" },
   { code: "S-4", service: "EXCEL", name: "Reprocesar filas descartadas", type: "SERVICE_REQUEST", reportedBy: "Quien carga tickets", impact: "LOW", urgency: "MEDIUM" },
+  { code: "I-15", service: "EXCEL", name: "Otro problema con la carga de Excel", type: "INCIDENT", reportedBy: "Cualquier usuario", impact: "MEDIUM", urgency: "MEDIUM", other: true },
   { code: "I-3", service: "REPORTS", name: "El reporte no se exporta con la data", type: "INCIDENT", reportedBy: "Los analistas que necesitan el reporte", impact: "MEDIUM", urgency: "MEDIUM" },
   { code: "I-11", service: "REPORTS", name: "Un reporte no carga o da error", type: "INCIDENT", reportedBy: "Gerencia o analistas", impact: "MEDIUM", urgency: "MEDIUM" },
   { code: "S-1", service: "REPORTS", name: "Reporte de uptime", type: "SERVICE_REQUEST", reportedBy: "El líder técnico", impact: "LOW", urgency: "LOW" },
+  { code: "I-16", service: "REPORTS", name: "Otro problema con los reportes", type: "INCIDENT", reportedBy: "Cualquier usuario", impact: "MEDIUM", urgency: "MEDIUM", other: true },
   { code: "I-12", service: "QUEUE", name: "La cola acumula trabajos o descartes", type: "INCIDENT", reportedBy: "ADMIN o equipo de plataforma", impact: "MEDIUM", urgency: "HIGH" },
+  { code: "I-17", service: "QUEUE", name: "Otro problema con la cola de procesamiento", type: "INCIDENT", reportedBy: "Cualquier usuario", impact: "MEDIUM", urgency: "MEDIUM", other: true },
   { code: "I-1", service: "ATTENTION", name: "Primera respuesta a un VIP después de 2 horas", type: "INCIDENT", reportedBy: "El usuario VIP", impact: "LOW", urgency: "MEDIUM", onlyFor: "VIP" },
   { code: "I-2", service: "ATTENTION", name: "Primera respuesta a un Normal después de 24 horas de atención", type: "INCIDENT", reportedBy: "El usuario Normal", impact: "LOW", urgency: "HIGH", onlyFor: "NORMAL" },
   { code: "S-5", service: "ATTENTION", name: "Cambio de horario de atención de un cliente", type: "SERVICE_REQUEST", reportedBy: "El cliente o su supervisor", impact: "LOW", urgency: "LOW" },
+  { code: "I-18", service: "ATTENTION", name: "Otro problema con la atención", type: "INCIDENT", reportedBy: "Cualquier usuario", impact: "MEDIUM", urgency: "MEDIUM", other: true },
 ];
 
 const companies = [
   { name: "Comercial Altamira", clientType: "VIP" },
+  { name: "Grupo Quetzal", clientType: "VIP" },
   { name: "Distribuidora El Roble", clientType: "NORMAL" },
+  { name: "Ferretería La Unión", clientType: "NORMAL" },
 ];
 
 const users: {
@@ -206,6 +216,8 @@ const users: {
   { email: "agente.n3@servicedesk.demo", name: "Equipo de plataforma", role: "AGENT", supportLevel: 3 },
   { email: "cliente.vip@altamira.demo", name: "Cliente VIP", role: "CLIENT", company: "Comercial Altamira" },
   { email: "cliente.normal@elroble.demo", name: "Cliente Normal", role: "CLIENT", company: "Distribuidora El Roble" },
+  { email: "cliente.vip@quetzal.demo", name: "Cliente Quetzal", role: "CLIENT", company: "Grupo Quetzal" },
+  { email: "cliente.normal@launion.demo", name: "Cliente La Unión", role: "CLIENT", company: "Ferretería La Unión" },
 ];
 
 async function seedRules() {
@@ -247,6 +259,7 @@ async function seedRules() {
       defaultUrgency: item.urgency,
       clientTypeId: item.onlyFor ? clientTypeIds.get(item.onlyFor)! : null,
       approvalQuestion: item.approvalQuestion ?? null,
+      isOther: item.other ?? false,
       sortOrder: index + 1,
       active: true,
     };

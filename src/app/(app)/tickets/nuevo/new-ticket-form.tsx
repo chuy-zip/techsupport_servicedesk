@@ -19,6 +19,7 @@ export type FormService = {
     name: string;
     type: TicketType;
     approvalQuestion: string | null;
+    isOther: boolean;
     defaultImpact: Impact;
     defaultUrgency: Urgency;
   }[];
@@ -49,6 +50,7 @@ export function NewTicketForm({ services }: { services: FormService[] }) {
   const [itemId, setItemId] = useState<string>();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [tags, setTags] = useState("");
   const [impact, setImpact] = useState<Impact>();
   const [urgency, setUrgency] = useState<Urgency>();
   const [approval, setApproval] = useState<string>();
@@ -69,6 +71,7 @@ export function NewTicketForm({ services }: { services: FormService[] }) {
       setItemId(undefined);
       setTitle("");
       setDescription("");
+      setTags("");
       setImpact(undefined);
       setUrgency(undefined);
       setApproval(undefined);
@@ -132,7 +135,7 @@ export function NewTicketForm({ services }: { services: FormService[] }) {
                 checked={itemId === i.id}
                 onChange={() => chooseItem(i.id)}
                 title={i.name}
-                description={`${typeNames[i.type]} · ${i.code}`}
+                description={i.isOther ? "Si tu caso no está en la lista, elige esta opción y descríbelo" : `${typeNames[i.type]} · ${i.code}`}
               />
             ))}
           </ChoiceGroup>
@@ -165,6 +168,17 @@ export function NewTicketForm({ services }: { services: FormService[] }) {
               hint="Qué intentabas hacer, qué pasó y desde cuándo."
               maxLength={4000}
               error={errors.description}
+            />
+            <TextField
+              label="Etiquetas, opcional"
+              name="tags"
+              value={tags}
+              onChange={(e) => {
+                setTags(e.target.value);
+                touch("tags");
+              }}
+              hint="Separadas por comas. Por ejemplo: login, error 500"
+              error={errors.tags}
             />
           </Section>
 

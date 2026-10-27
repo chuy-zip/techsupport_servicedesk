@@ -1,8 +1,8 @@
 import "server-only";
-import type { ClientType, Impact, Priority, Ticket, Urgency } from "@/generated/prisma/client";
+import type { ClientType, Impact, Ticket, Urgency } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
-import { applyPriorityFloor } from "@/lib/tickets/priority";
-import { addAttentionMinutes, attentionMinutesBetween, slaProgress, type SlaProgress } from "@/lib/tickets/sla";
+import { classifyFrom } from "@/lib/tickets/classify";
+import { attentionMinutesBetween, slaProgress, type SlaProgress } from "@/lib/tickets/sla";
 
 // Servicios con los elementos del catálogo que puede ver un tipo de cliente.
 // I-1 es solo para VIP e I-2 solo para Normal; el resto es para todos
@@ -27,14 +27,8 @@ export type CatalogService = Awaited<ReturnType<typeof getCatalogFor>>[number];
 // La usan tanto la creación como la reclasificación, para que no haya dos versiones de la regla
 export async function classify(impact: Impact, urgency: Urgency, clientType: ClientType, from: Date) {
   const rule = await db.priorityRule.findUniqueOrThrow({ where: { impact_urgency: { impact, urgency } } });
-  const priority: Priority = applyPriorityFloor(rule.priority, clientType.minPriority);
-  const level = await db.priorityLevel.findUniqueOrThrow({ where: { priority } });
-  const due = (minutes: number | null) => (minutes === null ? null : addAttentionMinutes(from, minutes, clientType));
-  return {
-    priority,
-    responseDueAt: due(level.responseMinutes),
-    resolutionDueAt: due(level.resolutionMinutes),
-  };
+  const levels = new Map((await db.priorityLevel.findMany()).map((level) => [level.priority, level]));
+  return classifyFrom(rule.priority, (priority) => levels.get(priority)!, clientType, from);
 }
 
 type SlaFields = Pick<Ticket, "createdAt" | "firstResponseAt" | "resolvedAt" | "responseDueAt" | "resolutionDueAt">;

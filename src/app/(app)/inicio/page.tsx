@@ -3,14 +3,13 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { PriorityBadge, StatusBadge } from "@/components/tickets/badges";
-import { SlaMeter } from "@/components/tickets/sla-meter";
+import { StatusBadge } from "@/components/tickets/badges";
+import { ClientCommitment } from "@/components/tickets/client-commitment";
 import { ButtonLink } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { getCurrentUser, type CurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { currentSla } from "@/lib/tickets/data";
 import { formatDate } from "@/lib/tickets/labels";
 
 export const metadata: Metadata = { title: "Inicio" };
@@ -32,11 +31,10 @@ async function Home() {
 
 async function ClientHome({ user }: { user: CurrentUser }) {
   await connection();
-  const now = new Date();
   const tickets = await db.ticket.findMany({
     where: { requesterId: user.id },
     orderBy: { createdAt: "desc" },
-    include: { catalogItem: { include: { service: true } }, company: { include: { clientType: true } } },
+    include: { catalogItem: { include: { service: true } } },
   });
 
   return (
@@ -58,7 +56,6 @@ async function ClientHome({ user }: { user: CurrentUser }) {
         <Card className="mt-8">
           <ul className="divide-y divide-line">
             {tickets.map((ticket) => {
-              const sla = currentSla(ticket, ticket.company.clientType, now);
               return (
                 <li key={ticket.id}>
                   <Link
@@ -71,11 +68,10 @@ async function ClientHome({ user }: { user: CurrentUser }) {
                       </p>
                       <p className="mt-0.5 truncate font-medium">{ticket.title}</p>
                       <div className="mt-2 flex flex-wrap gap-2">
-                        <PriorityBadge priority={ticket.priority} />
                         <StatusBadge status={ticket.status} />
                       </div>
                     </div>
-                    {sla && <SlaMeter label={sla.label} progress={sla.progress} />}
+                    <ClientCommitment ticket={ticket} />
                   </Link>
                 </li>
               );
