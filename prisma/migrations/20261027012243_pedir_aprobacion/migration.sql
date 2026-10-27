@@ -1,0 +1,5 @@
+-- AlterEnum
+ALTER TYPE "CommentKind" ADD VALUE 'APPROVAL_REQUEST';
+
+-- AlterEnum
+ALTER TYPE "TicketEventKind" ADD VALUE 'APPROVAL_REQUESTED';

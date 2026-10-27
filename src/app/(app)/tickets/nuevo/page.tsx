@@ -57,6 +57,7 @@ async function Form() {
       name: item.name,
       type: item.type,
       approvalQuestion: item.approvalQuestion,
+      isOther: item.isOther,
       defaultImpact: item.defaultImpact,
       defaultUrgency: item.defaultUrgency,
     })),

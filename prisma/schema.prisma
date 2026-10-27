@@ -66,6 +66,18 @@ enum TicketEventKind {
   LEVEL_CHANGED
   APPROVED
   PROBLEM_LINKED
+  CATEGORY_CHANGED
+  APPROVAL_REQUESTED
+}
+
+// De dónde sale un comentario: escrito a mano o como nota obligatoria de una acción
+enum CommentKind {
+  NOTE
+  RESOLUTION
+  REOPENING
+  CLOSURE
+  ESCALATION
+  APPROVAL_REQUEST
 }
 
 // Flujo de gestión de problemas de la Fase 1, más el cierre
@@ -166,6 +178,9 @@ model CatalogItem {
 
   // Si tiene valor, el formulario hace esta pregunta y un sí exige autorización antes de atender
   approvalQuestion String?
+
+  // "Otro" de cada servicio, para lo que no encaja en la lista. El nivel 1 lo reclasifica
+  isOther Boolean @default(false)
 
   active  Boolean  @default(true)
   tickets Ticket[]
@@ -307,6 +322,9 @@ model Comment {
 
   // Nota interna del equipo de soporte, el cliente no la ve
   internal Boolean @default(false)
+
+  // Da contexto en el hilo, por ejemplo que el mensaje explica una reapertura
+  kind CommentKind @default(NOTE)
 
   createdAt DateTime @default(now())
 

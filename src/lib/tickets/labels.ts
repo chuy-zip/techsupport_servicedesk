@@ -1,6 +1,8 @@
 import type {
+  CommentKind,
   Impact,
   Priority,
+  Role,
   ServiceKind,
   TicketEventKind,
   TicketStatus,
@@ -9,6 +11,23 @@ import type {
 } from "@/generated/prisma/client";
 
 // Textos en pantalla para los valores del modelo. Solo tipos: se puede usar desde el navegador
+
+// Etiqueta en el hilo para las notas que salen de una acción
+export const commentKindNames: Record<CommentKind, string | null> = {
+  NOTE: null,
+  RESOLUTION: "Solución",
+  REOPENING: "Reapertura",
+  CLOSURE: "Cierre",
+  ESCALATION: "Escalamiento",
+  APPROVAL_REQUEST: "Aprobación pedida",
+};
+
+export const roleNames: Record<Role, string> = {
+  CLIENT: "Cliente",
+  AGENT: "Agente",
+  SUPERVISOR: "Supervisión",
+  ADMIN: "Administración",
+};
 
 export const priorityNames: Record<Priority, string> = {
   P1: "Crítica",
@@ -59,8 +78,10 @@ const eventVerbs: Record<TicketEventKind, string> = {
   ASSIGNED: "cambió la asignación",
   PRIORITY_CHANGED: "reclasificó la prioridad",
   LEVEL_CHANGED: "cambió el nivel",
-  APPROVED: "aprobó la solicitud",
+  APPROVED: "dio la aprobación",
   PROBLEM_LINKED: "ligó el ticket a un problema",
+  CATEGORY_CHANGED: "cambió el elemento del catálogo",
+  APPROVAL_REQUESTED: "pidió la aprobación de supervisión",
 };
 
 // Descripción de un evento del historial, en minúscula para ir después del nombre de quien lo hizo
@@ -72,7 +93,7 @@ export function describeEvent(kind: TicketEventKind, from: string | null, to: st
     return value;
   };
   if (kind === "CREATED") return `${eventVerbs.CREATED} con prioridad ${to}`;
-  if (kind === "APPROVED") return eventVerbs.APPROVED;
+  if (kind === "APPROVED" || kind === "APPROVAL_REQUESTED") return eventVerbs[kind];
   return `${eventVerbs[kind]}: de ${show(from)} a ${show(to)}`;
 }
 

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Priority } from "@/generated/prisma/client";
 import type { SlaProgress } from "@/lib/tickets/sla";
-import { PriorityBadge } from "./badges";
+import { PriorityBadge, TagChip } from "./badges";
 import { SlaMeter } from "./sla-meter";
 
 export type BoardTicket = {
@@ -13,6 +13,7 @@ export type BoardTicket = {
   vip: boolean;
   level: number;
   assigneeName: string | null;
+  tags: string[];
   pendingApproval: boolean;
   alert: string | null;
   sla: { label: string; progress: SlaProgress } | null;
@@ -38,6 +39,9 @@ export function TicketCard({ ticket }: { ticket: BoardTicket }) {
         {ticket.vip && <span className={`${flag} bg-lime text-ink`}>VIP</span>}
         {ticket.pendingApproval && <span className={`${flag} bg-p2-bg text-p2`}>Por aprobar</span>}
         {ticket.alert && <span className={`${flag} bg-p1-bg text-p1`}>{ticket.alert}</span>}
+        {ticket.tags.slice(0, 3).map((tag) => (
+          <TagChip key={tag} tag={tag} />
+        ))}
       </div>
       <dl className="text-caption">
         <div className="flex justify-between gap-2">

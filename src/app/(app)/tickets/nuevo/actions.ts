@@ -5,6 +5,7 @@ import * as z from "zod";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { classify } from "@/lib/tickets/data";
+import { parseTags } from "@/lib/tickets/tags";
 
 const levels = ["HIGH", "MEDIUM", "LOW"] as const;
 
@@ -23,6 +24,7 @@ const Schema = z.object({
   impact: z.enum(levels).optional(),
   urgency: z.enum(levels).optional(),
   approval: z.enum(["yes", "no"]).optional(),
+  tags: z.string().optional(),
 });
 
 type Field = keyof z.infer<typeof Schema>;
@@ -40,6 +42,7 @@ export async function createTicket(_state: CreateTicketState, formData: FormData
     impact: read("impact"),
     urgency: read("urgency"),
     approval: read("approval"),
+    tags: read("tags"),
   });
 
   const errors: Partial<Record<Field, string>> = {};
@@ -51,6 +54,8 @@ export async function createTicket(_state: CreateTicketState, formData: FormData
     return { errors };
   }
   const data = parsed.data;
+  const tags = parseTags(data.tags ?? "");
+  if (tags.error) return { errors: { tags: tags.error } };
 
   const company = await db.company.findUniqueOrThrow({
     where: { id: user.companyId },
@@ -79,6 +84,7 @@ export async function createTicket(_state: CreateTicketState, formData: FormData
     data: {
       title: data.title,
       description: data.description,
+      tags: tags.tags,
       type: item.type,
       catalogItemId: item.id,
       impact,

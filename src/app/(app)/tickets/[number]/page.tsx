@@ -2,15 +2,18 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { PriorityBadge, StatusBadge } from "@/components/tickets/badges";
+import { PriorityBadge, StatusBadge, TagChip } from "@/components/tickets/badges";
+import { ClientCommitment } from "@/components/tickets/client-commitment";
+import { CommentThread } from "@/components/tickets/comment-thread";
 import { SlaMeter } from "@/components/tickets/sla-meter";
 import { BackLink } from "@/components/ui/back-link";
 import { Card } from "@/components/ui/card";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { currentSla, escalationAlert } from "@/lib/tickets/data";
+import { currentSla, escalationAlert, getCatalogFor } from "@/lib/tickets/data";
 import { describeEvent, formatDate, impactNames, typeNames, urgencyNames } from "@/lib/tickets/labels";
+import { CommentForm } from "./comment-form";
 import { StaffPanel } from "./staff-panel";
 
 export const metadata: Metadata = { title: "Ticket" };
@@ -41,36 +44,56 @@ async function TicketDetail({ params }: { params: PageProps<"/tickets/[number]">
       approvedBy: true,
       // El historial solo se muestra al personal
       events: { include: { actor: true }, orderBy: { createdAt: "desc" } },
+      // Las notas internas se filtran en la consulta: al cliente nunca le llegan
+      comments: {
+        where: isStaff ? {} : { internal: false },
+        include: { author: true },
+        orderBy: { createdAt: "asc" },
+      },
     },
   });
 
   // Un cliente solo ve los tickets de su empresa. Se responde igual que si no existiera
   if (!ticket || (!isStaff && ticket.companyId !== user.companyId)) notFound();
 
-  const agents = isStaff
-    ? await db.user.findMany({
-        where: { role: "AGENT", active: true },
-        select: { id: true, name: true, supportLevel: true },
-        orderBy: [{ supportLevel: "asc" }, { name: "asc" }],
-      })
-    : [];
+  const [agents, catalog] = isStaff
+    ? await Promise.all([
+        db.user.findMany({
+          where: { role: "AGENT", active: true },
+          select: { id: true, name: true, supportLevel: true },
+          orderBy: [{ supportLevel: "asc" }, { name: "asc" }],
+        }),
+        // Los elementos que este cliente podría haber elegido, para reclasificar
+        getCatalogFor(ticket.company.clientType.code),
+      ])
+    : [[], []];
 
   const now = new Date();
   const sla = currentSla(ticket, ticket.company.clientType, now);
   const alert = isStaff ? escalationAlert(ticket, ticket.company.clientType, now) : null;
 
-  const details = [
-    { label: "Ticket", value: `#${ticket.number}` },
-    { label: "Tipo", value: `${typeNames[ticket.type]} · ${ticket.catalogItem.code}` },
-    { label: "Qué pasa", value: ticket.catalogItem.name },
-    { label: "Impacto", value: impactNames[ticket.impact] },
-    { label: "Urgencia", value: urgencyNames[ticket.urgency] },
-    { label: "Empresa", value: `${ticket.company.name}, cliente ${ticket.company.clientType.name}` },
-    { label: "Reportado por", value: ticket.requester.name },
-    { label: "Creado", value: formatDate(ticket.createdAt) },
-    { label: "Nivel", value: `Nivel ${ticket.level}` },
-    { label: "Asignado a", value: ticket.assignee?.name ?? "Sin asignar" },
-  ];
+  // El cliente ve su caso y quién lo atiende; la clasificación interna es del personal
+  const details = isStaff
+    ? [
+        { label: "Ticket", value: `#${ticket.number}` },
+        { label: "Tipo", value: `${typeNames[ticket.type]} · ${ticket.catalogItem.code}` },
+        { label: "Qué pasa", value: ticket.catalogItem.name },
+        { label: "Impacto", value: impactNames[ticket.impact] },
+        { label: "Urgencia", value: urgencyNames[ticket.urgency] },
+        { label: "Empresa", value: `${ticket.company.name}, cliente ${ticket.company.clientType.name}` },
+        { label: "Reportado por", value: ticket.requester.email },
+        { label: "Creado", value: formatDate(ticket.createdAt) },
+        { label: "Nivel", value: `Nivel ${ticket.level}` },
+        { label: "Asignado a", value: ticket.assignee?.name ?? "Sin asignar" },
+      ]
+    : [
+        { label: "Ticket", value: `#${ticket.number}` },
+        { label: "Tipo", value: typeNames[ticket.type] },
+        { label: "Qué pasa", value: ticket.catalogItem.name },
+        { label: "Reportado por", value: ticket.requester.email },
+        { label: "Creado", value: formatDate(ticket.createdAt) },
+        { label: "Te atiende", value: ticket.assignee?.name ?? "Pendiente de asignar" },
+      ];
 
   return (
     <>
@@ -80,8 +103,11 @@ async function TicketDetail({ params }: { params: PageProps<"/tickets/[number]">
           <Eyebrow>{ticket.catalogItem.service.name}</Eyebrow>
           <h1 className="mt-2 font-display text-title leading-tight font-bold break-words">{ticket.title}</h1>
           <div className="mt-4 flex flex-wrap gap-2">
-            <PriorityBadge priority={ticket.priority} />
+            {isStaff && <PriorityBadge priority={ticket.priority} />}
             <StatusBadge status={ticket.status} />
+            {ticket.tags.map((tag) => (
+              <TagChip key={tag} tag={tag} />
+            ))}
           </div>
 
           {ticket.requiresApproval && (
@@ -91,8 +117,8 @@ async function TicketDetail({ params }: { params: PageProps<"/tickets/[number]">
               }`}
             >
               {ticket.approvedAt
-                ? `Solicitud aprobada por ${ticket.approvedBy?.name} el ${formatDate(ticket.approvedAt)}.`
-                : "Esta solicitud necesita la autorización de supervisión antes de atenderse."}
+                ? `Aprobado por ${ticket.approvedBy?.name}, ${formatDate(ticket.approvedAt)}`
+                : "Este ticket necesita la autorización de supervisión antes de atenderse."}
             </p>
           )}
 
@@ -106,6 +132,24 @@ async function TicketDetail({ params }: { params: PageProps<"/tickets/[number]">
             <h2 className="text-caption font-medium text-muted">Descripción</h2>
             <p className="mt-2 whitespace-pre-wrap">{ticket.description}</p>
           </Card>
+
+          <section className="mt-8">
+            <h2 className="font-semibold">Comentarios</h2>
+            {ticket.comments.length === 0 ? (
+              <p className="mt-2 text-caption text-muted">Todavía no hay comentarios.</p>
+            ) : (
+              <div className="mt-3">
+                <CommentThread comments={ticket.comments} viewer={user} />
+              </div>
+            )}
+            <div className="mt-4">
+              {ticket.status === "CLOSED" ? (
+                <p className="text-caption text-muted">El ticket está cerrado; ya no recibe comentarios.</p>
+              ) : (
+                <CommentForm ticketId={ticket.id} canWriteInternal={isStaff} />
+              )}
+            </div>
+          </section>
 
           {isStaff && ticket.events.length > 0 && (
             <section className="mt-8">
@@ -126,12 +170,28 @@ async function TicketDetail({ params }: { params: PageProps<"/tickets/[number]">
         </div>
 
         <aside className="flex flex-col gap-4">
-          {sla && (
-            <Card className="px-5 py-4">
-              <SlaMeter label={sla.label} progress={sla.progress} />
-            </Card>
+          {isStaff
+            ? sla && (
+                <Card className="px-5 py-4">
+                  <SlaMeter label={sla.label} progress={sla.progress} />
+                </Card>
+              )
+            : (
+                <Card className="px-5 py-4">
+                  <ClientCommitment ticket={ticket} />
+                </Card>
+              )}
+          {isStaff && (
+            <StaffPanel
+              ticket={ticket}
+              user={user}
+              agents={agents}
+              catalog={catalog.map((service) => ({
+                name: service.name,
+                items: service.items.map((item) => ({ id: item.id, code: item.code, name: item.name })),
+              }))}
+            />
           )}
-          {isStaff && <StaffPanel ticket={ticket} user={user} agents={agents} />}
           <Card>
             <dl className="divide-y divide-line text-caption">
               {details.map((item) => (
