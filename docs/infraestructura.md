@@ -64,7 +64,7 @@ Hay cuatro empresas para que el filtro por cliente del tablero tenga qué filtra
 
 ### Datos de demostración
 
-Los usuarios y las reglas los carga `npx prisma db seed`, y en producción el pipeline. Los tickets de ejemplo son aparte: `prisma/seed-demo.ts` crea 24 tickets en todos los estados, con su historial y comentarios, repartidos entre los seis servicios y las cuatro empresas. Sirve como punto de partida para la demostración y para volver a él cuando se quiera.
+Los usuarios y las reglas los carga `npx prisma db seed`, y en producción el pipeline. Los tickets de ejemplo son aparte: `prisma/seed-demo.ts` crea 24 tickets en todos los estados, con su historial y comentarios, repartidos entre los seis servicios y las cuatro empresas, y 3 problemas con incidentes ligados. Sirve como punto de partida para la demostración y para volver a él cuando se quiera.
 
 | Comando | Qué hace |
 |---|---|
