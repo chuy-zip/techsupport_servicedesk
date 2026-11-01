@@ -22,6 +22,19 @@
   --color-p5: #62665c;
   --color-p5-bg: #ecede8;
 
+  /* Gráficas. La prioridad es una escala de un solo tono: entre más urgente, más oscuro */
+  --color-chart-p1: #5e1606;
+  --color-chart-p2: #86240f;
+  --color-chart-p3: #a83f24;
+  --color-chart-p4: #c4623f;
+  --color-chart-p5: #d98a6a;
+  /* Lo pendiente en verde, de más a menos urgente; lo terminado en gris, para que no compita */
+  --color-chart-open: #2f3d12;
+  --color-chart-progress: #556b2f;
+  --color-chart-escalated: #8da155;
+  --color-chart-resolved: #b9bcb1;
+  --color-chart-closed: #d6d8cf;
+
   --font-display: var(--font-baskerville), Georgia, serif;
   --font-sans: var(--font-inter), system-ui, sans-serif;
 

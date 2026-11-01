@@ -45,7 +45,11 @@ async function Navigation() {
           { href: "/inicio", label: "Mis tickets" },
           { href: "/tickets/nuevo", label: "Reportar" },
         ]
-      : [{ href: "/tablero", label: "Tablero" }];
+      : [
+          { href: "/tablero", label: "Tablero" },
+          { href: "/problemas", label: "Problemas" },
+          { href: "/estadisticas", label: "Estadísticas" },
+        ];
 
   return (
     <nav className="hidden gap-5 md:flex">
