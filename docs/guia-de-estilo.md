@@ -38,6 +38,15 @@ Las prioridades tienen color propio, distinto del verde, para que lo urgente se 
 
 Los estados del ticket usan fichas neutras con borde. Solo RESOLVED y CLOSED usan `lime` de fondo.
 
+### Gráficas
+
+Las gráficas tienen sus propios colores, con nombres `chart-…`. Se revisaron para que se distingan con daltonismo y contra el fondo blanco.
+
+* **Prioridad.** Un solo tono rojizo, del `chart-p1` más oscuro al `chart-p5` más claro: entre más urgente, más oscuro. No son los colores de las fichas, que mezclan tonos y en una barra partida se confunden.
+* **Estado.** Lo pendiente en verde, de `chart-open` oscuro a `chart-escalated` claro. Lo resuelto y lo cerrado en gris, para que no compita con lo que falta.
+* **El color nunca va solo.** Cada gráfica lleva leyenda con el nombre y la cifra en texto.
+* **Una forma por tipo de dato.** Barras para comparar, dona para partes de un todo con pocas partes, columnas para una escala con orden y una barra al 100% cuando solo hay dos partes. Nunca una dona de dos partes.
+
 ## Tipografía
 
 | Rol | Fuente | Uso |
@@ -75,7 +84,8 @@ Antes de crear una pieza, revisar si ya existe. Todas están en `src/components`
 | `ui/eyebrow` | Etiqueta pequeña en mayúsculas sobre un título |
 | `ui/back-link` | Enlace con flecha para volver a la pantalla anterior |
 | `ui/action-form` | Formulario de una acción de servidor que muestra su error y evita dobles envíos |
-| `tickets/badges` | Prioridad, estado y etiqueta de un ticket |
+| `tickets/badges` | Prioridad, estado y etiqueta de un ticket, y el estado de un problema |
+| `stats/charts` | Gráficas de las estadísticas: barras partidas, dona, columnas, barra al 100% y leyenda |
 | `tickets/sla-meter` | Medidor de SLA del personal |
 | `tickets/client-commitment` | Fecha comprometida que ve el cliente, en lugar del medidor |
 | `tickets/ticket-card` | Tarjeta del tablero |
