@@ -17,11 +17,13 @@ import {
   type CommentKind,
   type Impact,
   type Priority,
+  type ProblemStatus,
   type TicketEventKind,
   type TicketStatus,
   type Urgency,
   type User,
 } from "../src/generated/prisma/client";
+import { canManageProblems, canMoveProblem, missingForStatus } from "../src/lib/problems";
 import { classifyFrom } from "../src/lib/tickets/classify";
 import {
   APPROVAL_NOTE,
@@ -346,21 +348,112 @@ const specs: Spec[] = [
 ];
 
 // ---------------------------------------------------------------------------
+// Problemas: causas raíz detrás de varios incidentes de arriba, en distintos pasos del flujo
+// ---------------------------------------------------------------------------
+
+type ProblemSpec = {
+  title: string;
+  description: string;
+  service: string | null; // código del servicio; null si cruza varios
+  owner: keyof typeof staffEmails;
+  status: ProblemStatus;
+  rootCause?: string;
+  workaround?: string;
+  tickets: string[]; // títulos de los incidentes que se ligan
+};
+
+const problemSpecs: ProblemSpec[] = [
+  {
+    title: "Los correos de restablecimiento de contraseña no llegan",
+    description: "Varios clientes no pueden entrar y piden restablecer la contraseña, pero el correo con el enlace nunca llega.",
+    service: "AUTH",
+    owner: "n2",
+    status: "KNOWN_ERROR",
+    rootCause: "El proveedor de correo rechaza los envíos del dominio del portal porque su registro SPF no incluye al servidor que envía los enlaces.",
+    workaround: "Restablecer la contraseña desde la mesa y entregar el enlace por teléfono al contacto registrado del cliente.",
+    tickets: [
+      "No nos llegan los correos para restablecer la contraseña",
+      "No puedo entrar con mi usuario desde esta mañana",
+      "Una persona de bodega no puede iniciar sesión",
+    ],
+  },
+  {
+    title: "Las cargas grandes de Excel saturan la cola de procesamiento",
+    description: "Las cargas de más de mil filas se quedan procesando, la cola acumula trabajos y parte de las filas se descartan.",
+    service: null,
+    owner: "n3",
+    status: "DIAGNOSING",
+    workaround: "Dividir el archivo en partes de menos de mil filas y reprocesar las filas descartadas con la solicitud S-4.",
+    tickets: [
+      "La carga de Excel se queda procesando",
+      "Faltan tickets después de una carga de Excel",
+      "La cola de procesamiento acumula trabajos",
+    ],
+  },
+  {
+    title: "La lista de tickets se queda vacía",
+    description: "La lista de tickets aparece en blanco para parte de los usuarios. Ya pasó hace una semana y se resolvió reiniciando el servicio.",
+    service: "TICKETS",
+    owner: "n2",
+    status: "IDENTIFIED",
+    tickets: ["La lista de tickets no carga", "La lista de tickets no carga a la mitad del equipo"],
+  },
+];
+
+// ---------------------------------------------------------------------------
 // Simulación: aplica las mismas reglas que las acciones de la aplicación y falla si el guion las rompe
 // ---------------------------------------------------------------------------
 
 type Loaded = Awaited<ReturnType<typeof load>>;
 
 async function load() {
-  const [clientTypes, companies, users, items, rules, levels] = await Promise.all([
+  const [clientTypes, companies, users, items, rules, levels, services] = await Promise.all([
     db.clientType.findMany(),
     db.company.findMany(),
     db.user.findMany(),
     db.catalogItem.findMany(),
     db.priorityRule.findMany(),
     db.priorityLevel.findMany(),
+    db.service.findMany(),
   ]);
-  return { clientTypes, companies, users, items, rules, levels };
+  return { clientTypes, companies, users, items, rules, levels, services };
+}
+
+// Recorre el flujo desde Identificado hasta el estado pedido con las reglas de la aplicación
+function buildProblem(spec: ProblemSpec, data: Loaded, tickets: { title: string; type: string }[]) {
+  const fail = (why: string): never => {
+    throw new Error(`Problema inválido "${spec.title}": ${why}`);
+  };
+  const owner = data.users.find((u) => u.email === staffEmails[spec.owner]) ?? fail(`falta ${staffEmails[spec.owner]}`);
+  if (!canManageProblems(owner)) fail(`${owner.name} no gestiona problemas`);
+  const service = spec.service
+    ? (data.services.find((s) => s.code === spec.service) ?? fail(`no existe el servicio ${spec.service}`))
+    : null;
+
+  const path: ProblemStatus[] = ["IDENTIFIED", "DIAGNOSING", "KNOWN_ERROR", "SOLUTION_PROPOSED", "CLOSED"];
+  const analysis = { rootCause: spec.rootCause ?? null, workaround: spec.workaround ?? null };
+  for (let i = 1; i <= path.indexOf(spec.status); i++) {
+    if (!canMoveProblem(path[i - 1], path[i])) fail(`no se puede pasar de ${path[i - 1]} a ${path[i]}`);
+    const missing = missingForStatus(path[i], analysis);
+    if (missing) fail(missing);
+  }
+  for (const title of spec.tickets) {
+    const ticket = tickets.find((t) => t.title === title) ?? fail(`no hay un ticket "${title}"`);
+    if (ticket.type !== "INCIDENT") fail(`"${title}" no es un incidente`);
+  }
+
+  return {
+    data: {
+      title: spec.title,
+      description: spec.description,
+      status: spec.status,
+      ...analysis,
+      serviceId: service?.id ?? null,
+      ownerId: owner.id,
+    },
+    ownerId: owner.id,
+    tickets: spec.tickets,
+  };
 }
 
 function build(spec: Spec, data: Loaded, now: Date) {
@@ -556,8 +649,13 @@ async function main() {
   // Los más antiguos primero, para que el folio siga el orden cronológico
   const built = [...specs].sort((a, b) => b.age - a.age).map((spec) => build(spec, data, now));
 
+  const problems = problemSpecs.map((spec) => buildProblem(spec, data, built.map((b) => b.data)));
+
   const existing = await db.ticket.count();
-  console.log(`Tickets actuales que se borrarían: ${existing}. Tickets que se crearían: ${built.length}.`);
+  console.log(
+    `Tickets actuales que se borrarían: ${existing}. Tickets que se crearían: ${built.length}. ` +
+      `Problemas que se crearían: ${problems.length}.`,
+  );
 
   if (!confirmed) {
     console.log("No se cambió nada. Para ejecutarlo, agrega --yes.");
@@ -573,9 +671,27 @@ async function main() {
     await db.ticket.create({ data: { ...ticket, events: { create: events }, comments: { create: comments } } });
   }
 
+  await db.$queryRaw`SELECT setval(pg_get_serial_sequence('"Problem"', 'number'), 1, false)::int AS n`;
+  for (const problem of problems) {
+    const created = await db.problem.create({ data: problem.data });
+    const linked = await db.ticket.findMany({ where: { title: { in: problem.tickets } } });
+    await db.ticket.updateMany({ where: { id: { in: linked.map((t) => t.id) } }, data: { problemId: created.id } });
+    // Igual que en la aplicación: ligar deja su evento en el historial del ticket
+    await db.ticketEvent.createMany({
+      data: linked.map((t) => ({
+        ticketId: t.id,
+        actorId: problem.ownerId,
+        kind: "PROBLEM_LINKED" as const,
+        toValue: `problema #${created.number}`,
+      })),
+    });
+  }
+
   const byStatus = await db.ticket.groupBy({ by: ["status"], _count: true });
   console.log(
-    `Listo: ${built.length} tickets. ` + byStatus.map((row) => `${row.status} ${row._count}`).join(", ") + ".",
+    `Listo: ${built.length} tickets y ${problems.length} problemas. ` +
+      byStatus.map((row) => `${row.status} ${row._count}`).join(", ") +
+      ".",
   );
 }
 

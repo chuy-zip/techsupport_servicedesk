@@ -1,5 +1,5 @@
-import type { Priority, TicketStatus } from "@/generated/prisma/client";
-import { priorityNames, statusNames } from "@/lib/tickets/labels";
+import type { Priority, ProblemStatus, TicketStatus } from "@/generated/prisma/client";
+import { priorityNames, problemStatusNames, statusNames } from "@/lib/tickets/labels";
 
 const pill = "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-caption font-semibold whitespace-nowrap";
 
@@ -30,6 +30,16 @@ export function StatusBadge({ status }: { status: TicketStatus }) {
   return (
     <span className={`${pill} border ${resolved ? "border-transparent bg-lime text-ink" : "border-line bg-surface text-ink"}`}>
       {statusNames[status]}
+    </span>
+  );
+}
+
+// Mismo criterio que el ticket: neutras con borde, y lime cuando ya hay una salida
+export function ProblemStatusBadge({ status }: { status: ProblemStatus }) {
+  const settled = status === "SOLUTION_PROPOSED" || status === "CLOSED";
+  return (
+    <span className={`${pill} border ${settled ? "border-transparent bg-lime text-ink" : "border-line bg-surface text-ink"}`}>
+      {problemStatusNames[status]}
     </span>
   );
 }

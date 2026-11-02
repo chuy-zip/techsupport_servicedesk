@@ -2,6 +2,7 @@ import type {
   CommentKind,
   Impact,
   Priority,
+  ProblemStatus,
   Role,
   ServiceKind,
   TicketEventKind,
@@ -45,6 +46,14 @@ export const statusNames: Record<TicketStatus, string> = {
   CLOSED: "Cerrado",
 };
 
+export const problemStatusNames: Record<ProblemStatus, string> = {
+  IDENTIFIED: "Identificado",
+  DIAGNOSING: "En diagnóstico",
+  KNOWN_ERROR: "Error conocido",
+  SOLUTION_PROPOSED: "Solución propuesta",
+  CLOSED: "Cerrado",
+};
+
 export const typeNames: Record<TicketType, string> = {
   INCIDENT: "Incidente",
   SERVICE_REQUEST: "Solicitud",
@@ -79,7 +88,7 @@ const eventVerbs: Record<TicketEventKind, string> = {
   PRIORITY_CHANGED: "reclasificó la prioridad",
   LEVEL_CHANGED: "cambió el nivel",
   APPROVED: "dio la aprobación",
-  PROBLEM_LINKED: "ligó el ticket a un problema",
+  PROBLEM_LINKED: "cambió el problema ligado",
   CATEGORY_CHANGED: "cambió el elemento del catálogo",
   APPROVAL_REQUESTED: "pidió la aprobación de supervisión",
 };
@@ -87,7 +96,7 @@ const eventVerbs: Record<TicketEventKind, string> = {
 // Descripción de un evento del historial, en minúscula para ir después del nombre de quien lo hizo
 export function describeEvent(kind: TicketEventKind, from: string | null, to: string | null) {
   const show = (value: string | null) => {
-    if (value === null || value === "") return "nadie";
+    if (value === null || value === "") return kind === "PROBLEM_LINKED" ? "ninguno" : "nadie";
     if (kind === "STATUS_CHANGED") return statusNames[value as TicketStatus] ?? value;
     if (kind === "LEVEL_CHANGED") return `nivel ${value}`;
     return value;

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
@@ -42,6 +43,7 @@ async function TicketDetail({ params }: { params: PageProps<"/tickets/[number]">
       requester: true,
       assignee: true,
       approvedBy: true,
+      problem: true,
       // El historial solo se muestra al personal
       events: { include: { actor: true }, orderBy: { createdAt: "desc" } },
       // Las notas internas se filtran en la consulta: al cliente nunca le llegan
@@ -85,6 +87,7 @@ async function TicketDetail({ params }: { params: PageProps<"/tickets/[number]">
         { label: "Creado", value: formatDate(ticket.createdAt) },
         { label: "Nivel", value: `Nivel ${ticket.level}` },
         { label: "Asignado a", value: ticket.assignee?.name ?? "Sin asignar" },
+        ...(ticket.problem ? [{ label: "Problema", value: `PRB-${ticket.problem.number}` }] : []),
       ]
     : [
         { label: "Ticket", value: `#${ticket.number}` },
@@ -120,6 +123,19 @@ async function TicketDetail({ params }: { params: PageProps<"/tickets/[number]">
                 ? `Aprobado por ${ticket.approvedBy?.name}, ${formatDate(ticket.approvedAt)}`
                 : "Este ticket necesita la autorización de supervisión antes de atenderse."}
             </p>
+          )}
+
+          {/* Si la causa ya se conoce, quien atiende aplica el workaround en vez de diagnosticar de nuevo */}
+          {isStaff && ticket.problem?.workaround && (
+            <div className="mt-6 rounded-control border border-line bg-surface px-4 py-3 text-caption">
+              <p className="font-semibold">
+                Workaround del{" "}
+                <Link href={`/problemas/${ticket.problem.number}`} className="text-olive-dark underline">
+                  problema PRB-{ticket.problem.number}
+                </Link>
+              </p>
+              <p className="mt-1 whitespace-pre-wrap">{ticket.problem.workaround}</p>
+            </div>
           )}
 
           {alert && (

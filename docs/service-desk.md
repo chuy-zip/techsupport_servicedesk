@@ -101,6 +101,10 @@ Son 23 elementos en seis servicios. Cada servicio tiene al menos uno, y los dos 
 | Reclasificar impacto y urgencia, y cambiar el elemento del catálogo | No | Sí, si es de su nivel o inferior | Sí |
 | Pedir aprobación | No | Sí | No: son quienes aprueban |
 | Aprobar | No | No | Sí |
+| Ver estadísticas | No | Sí | Sí |
+| Consultar problemas y su workaround | No | Sí | Sí |
+| Registrar problemas, moverlos de estado, documentar causa y workaround, y ligar incidentes | No | Solo nivel 2 o 3 | Sí |
+| Asignar un problema a otra persona | No | No: solo tomarlo | Sí |
 
 * **Cómo llega un ticket a alguien.** Hay una cola única ordenada por prioridad y el nivel 1 toma de ella. Supervisión vigila la carga y reasigna si alguien se satura o un ticket se atasca; no hay que repartir uno por uno.
 * **Quién clasifica.** El cliente responde dos preguntas sobre su situación y eso da la clasificación inicial; el personal la revisa y la ajusta, como dice la Fase 1.
@@ -164,6 +168,40 @@ Campo opcional al crear el ticket, separadas por comas, como "login, error 500".
 * **Filtros.** Van en la URL: sobreviven al recargar y se pueden compartir. Los valores inválidos se ignoran en vez de romper la página.
 * **Carga por agente.** Solo supervisión y administración ven cuántos tickets pendientes tiene cada persona, sin contar resueltos ni cerrados, y filtran por ella. Para un agente ese filtro se ignora.
 
+## Estadísticas
+
+Pantalla `/estadisticas`, solo para el personal. Cumple el requisito de la gráfica de tickets por categoría.
+
+La pantalla tiene cuatro niveles de importancia. Cada nivel usa una forma distinta, para que lo importante se vea primero.
+
+* **Primer nivel, la cola.** Los pendientes en grande, en el panel verde, con la parte ya resuelta o cerrada. Al lado, en pequeño, tres cifras que piden acción: P1 y P2 sin resolver, escalados y tickets que llegaron como "Otro".
+* **Segundo nivel, tickets por servicio.** El servicio es la categoría del enunciado. Barras horizontales a todo lo ancho, partidas por prioridad, de más a menos tickets. Debajo, cuántos llegaron como "Otro" y una tabla con las mismas cifras.
+* **Tercer nivel, cómo se reparte.** Una dona por estado, porque se lee como partes de un todo, y columnas por prioridad, porque es una escala con orden.
+* **Cuarto nivel, contexto.** El tipo en una sola barra partida, porque una dona de dos partes no aporta, y las diez etiquetas más usadas. Como un ticket puede tener varias, no suman el total.
+* **Alcance.** "Todos los tickets" o "Solo pendientes", que deja fuera lo resuelto y lo cerrado. Va en la URL y aplica a toda la pantalla, salvo "P1 y P2 sin resolver", que siempre cuenta la cola de hoy.
+* **Sin librería de gráficas.** HTML, Tailwind y un SVG para la dona, dibujados en el servidor. La cifra siempre va en texto y el color nunca va solo; al pasar el cursor, el navegador muestra el detalle de cada parte.
+
+## Problemas
+
+Pantalla `/problemas`. Sigue el flujo de la Fase 1.
+
+| Desde | Puede pasar a |
+|---|---|
+| Identificado | En diagnóstico |
+| En diagnóstico | Error conocido, solo con causa raíz y workaround |
+| Error conocido | Solución propuesta |
+| Solución propuesta | Cerrado, o En diagnóstico si la solución no funcionó |
+| Cerrado | Ninguno |
+
+* **Quién.** Agentes de nivel 2 o 3, supervisión y administración. El nivel 1 consulta.
+* **Responsable.** Quien registra el problema queda como responsable. Un agente puede tomarlo; supervisión lo asigna a cualquiera que gestione problemas.
+* **Ligar incidentes.** Por número, desde el problema. Solo incidentes, no solicitudes. Cada ligado y desligado deja un evento en el historial del ticket.
+* **Workaround en el ticket.** El personal lo ve arriba de la descripción del ticket ligado. El cliente no.
+* **Error conocido.** No se puede marcar sin causa raíz y workaround, ni dejarlos vacíos después.
+* **Incidentes que se repiten.** La lista avisa de los elementos del catálogo con dos o más incidentes en 30 días sin un problema ligado.
+* **Sin historial propio.** El modelo `Problem` no tiene tabla de eventos; el rastro queda en los tickets ligados. Agregarla necesitaría una migración.
+* **Cambios simultáneos.** Como en los tickets, un cambio se rechaza si otra persona modificó el problema antes.
+
 ## Lo que ve el cliente
 
 El cliente ve su caso y el compromiso del equipo, no la clasificación interna.
@@ -197,17 +235,14 @@ La clasificación se oculta porque un cliente que ve su caso marcado como urgenc
 | Tablero de seguimiento para soporte | Hecho, con filtros y carga por agente |
 | Vista del ticket con comentarios | Hecho, con notas internas |
 | Edición y actualización por soporte | Hecho |
-| Gráfica de tickets por categoría | Pendiente |
+| Gráfica de tickets por categoría | Hecho, por servicio, prioridad, etiqueta, estado y tipo |
 
-**Hecho:** login, creación de tickets con prioridad y vencimientos, etiquetas, "Otro", tablero con filtros, edición con notas obligatorias, escalamiento, aprobaciones, comentarios y vista del cliente. Los datos de demostración, con 24 tickets, están en `prisma/seed-demo.ts`; ver `infraestructura.md`.
+**Hecho:** login, creación de tickets con prioridad y vencimientos, etiquetas, "Otro", tablero con filtros, edición con notas obligatorias, escalamiento, aprobaciones, comentarios, vista del cliente, estadísticas y gestión de problemas. Los datos de demostración, con 24 tickets y 3 problemas, están en `prisma/seed-demo.ts`; ver `infraestructura.md`.
 
-Pendientes, en orden.
+Pendientes.
 
-1. **Estadísticas.** Gráficas de tickets por servicio, que es la categoría que pide el enunciado, y por etiqueta, prioridad y tipo. Los datos de demostración ya reparten tickets en los seis servicios.
-2. **Problemas en el sistema.** Ligar incidentes a un problema y seguir su flujo, para agentes de nivel 2 o 3 y supervisión. El modelo ya existe; falta la pantalla.
-3. **Análisis de gestión de problemas.** Documento que mapea los problemas probables de cada servicio: causa raíz posible, incidentes que lo delatan y workaround. Lo pide un objetivo del enunciado y no es una pantalla.
-4. **Guion de la demostración.** El recorrido con los datos de demostración está en `casos-de-uso.md`; falta el guion con el orden y el tiempo de cada parte.
-5. **Presentación en clase.** Vale el 25%. Debe justificar el catálogo y las prioridades, y mostrar los ajustes a la Fase 1 como mejora continua.
+1. **Armar las diapositivas,** con capturas del tablero y de las estadísticas.
+2. **Ensayar la demostración** y correr los datos de demostración en producción poco antes.
 
 Opcional, solo si sobra tiempo:
 

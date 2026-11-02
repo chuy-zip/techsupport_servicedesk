@@ -52,6 +52,22 @@ Escenarios comprobados de punta a punta y su resultado esperado. Las reglas est�
 | CU-26 Carga por agente | Ver "Pendientes por agente" y filtrar por una persona | Muestra cuántos tiene cada uno y sus tickets |
 | CU-27 Ciclo completo | Asignar, poner en progreso, resolver y cerrar | Llega a Cerrado con su historial |
 
+## Estadísticas y problemas
+
+Validados el 31 de octubre de 2026 con el mismo método, contra la rama `dev`. El problema de prueba se borró al terminar.
+
+| Caso | Pasos | Resultado esperado |
+|---|---|---|
+| CU-46 Estadísticas | Supervisión abre Estadísticas | Los seis servicios con su desglose por prioridad; el total coincide con la base |
+| CU-47 Solo pendientes | Cambiar a "Solo pendientes" | Las cifras dejan fuera lo resuelto y lo cerrado |
+| CU-48 Registrar un problema | Supervisión o nivel 2 llenan "Registrar un problema" | Llega al detalle en Identificado, con quien lo registró como responsable |
+| CU-49 Error conocido sin análisis | Marcar como error conocido sin causa raíz | Se rechaza: "Documenta la causa raíz…" |
+| CU-50 Flujo completo | Diagnóstico, análisis, error conocido, solución propuesta y cierre | Llega a Cerrado con fecha de cierre y ya no ofrece acciones |
+| CU-51 Ligar un incidente | Escribir su número y "Ligar" | Aparece en la lista; el ticket muestra el workaround y el evento en su historial |
+| CU-52 Ligar una solicitud | Escribir el número de una solicitud | Se rechaza: solo se ligan incidentes |
+| CU-53 Vaciar el workaround | En un error conocido, borrar el workaround y guardar | Se rechaza |
+| CU-54 Desligar | "Desligar" en un incidente ligado | Sale de la lista |
+
 ## Seguridad: lo que debe fallar
 
 | Caso | Intento | Resultado esperado |
@@ -70,6 +86,8 @@ Escenarios comprobados de punta a punta y su resultado esperado. Las reglas est�
 | CU-39 URL inventada | `prioridad=P9` o un cliente que no existe | Se ignora sin romper la página |
 | CU-40 Más de 5 etiquetas | Escribir seis | Error junto al campo, sin perder lo escrito |
 | CU-41 Supervisión pide aprobación | Supervisión o administración abren un ticket | No ven "Pedir aprobación": son quienes aprueban |
+| CU-55 Estadísticas y problemas para clientes | Un cliente abre `/estadisticas` o `/problemas` | Vuelve a "Mis tickets" sin ver datos |
+| CU-56 Nivel 1 en un problema | Agente de nivel 1 abre un problema | Ve la causa y el workaround, sin controles para cambiarlo |
 
 ## Datos de demostración
 
