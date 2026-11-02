@@ -80,6 +80,7 @@ Antes de crear una pieza, revisar si ya existe. Todas están en `src/components`
 | `ui/text-field` | `TextField` y `TextArea`, con etiqueta, ayuda y error |
 | `ui/select-field` | `SelectField`, con la caja y la flecha compartidas con los desplegables hechos a mano |
 | `ui/choice` | Opciones de radio con aspecto de tarjeta, y su grupo con pregunta |
+| `ui/chip-checkbox` | Ficha redonda que se marca, para elegir varias opciones de una lista corta, como las etiquetas |
 | `ui/card` | Tarjeta con borde y sombra |
 | `ui/eyebrow` | Etiqueta pequeña en mayúsculas sobre un título |
 | `ui/back-link` | Enlace con flecha para volver a la pantalla anterior |

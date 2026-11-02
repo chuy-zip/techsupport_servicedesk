@@ -24,7 +24,7 @@ const Schema = z.object({
   impact: z.enum(levels).optional(),
   urgency: z.enum(levels).optional(),
   approval: z.enum(["yes", "no"]).optional(),
-  tags: z.string().optional(),
+  tags: z.array(z.string()),
 });
 
 type Field = keyof z.infer<typeof Schema>;
@@ -42,7 +42,7 @@ export async function createTicket(_state: CreateTicketState, formData: FormData
     impact: read("impact"),
     urgency: read("urgency"),
     approval: read("approval"),
-    tags: read("tags"),
+    tags: formData.getAll("tags").map(String),
   });
 
   const errors: Partial<Record<Field, string>> = {};
@@ -54,7 +54,7 @@ export async function createTicket(_state: CreateTicketState, formData: FormData
     return { errors };
   }
   const data = parsed.data;
-  const tags = parseTags(data.tags ?? "");
+  const tags = parseTags(data.tags);
   if (tags.error) return { errors: { tags: tags.error } };
 
   const company = await db.company.findUniqueOrThrow({
