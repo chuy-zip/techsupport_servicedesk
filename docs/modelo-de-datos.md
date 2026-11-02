@@ -143,6 +143,6 @@ Todas las tablas usan un `id` de texto como llave primaria, salvo `PriorityRule`
 * **`TicketEvent` es el historial.** Cada cambio de estado, asignación, prioridad, nivel, elemento del catálogo, aprobación o problema deja un registro, en la misma transacción que el cambio. De ahí sale, por ejemplo, la primera transición a IN_PROGRESS que mide el SLO 2.
 * **`Comment.kind` distingue de dónde sale un comentario.** Un comentario escrito a mano es NOTE; las notas obligatorias de una acción llevan su tipo, para etiquetarlas en el hilo. Que sea pública o interna lo decide `internal`.
 * **`CatalogItem.isOther` marca el "Otro" de cada servicio,** para reconocerlo en la pantalla y, más adelante, en las estadísticas.
-* **`Ticket.tags` es una lista de texto,** ya normalizada al guardarse, que alimentará las estadísticas por etiqueta.
+* **`Ticket.tags` es una lista de texto** con valores de una lista cerrada que valida el servidor, que alimentará las estadísticas por etiqueta.
 * **El número del ticket es global,** una sola secuencia para todo el sistema, y no se reutiliza si un ticket se borra.
 * **Borrados.** Al borrar un ticket se borran sus comentarios y eventos. Al borrar un problema, sus tickets quedan sin problema y no se borran.

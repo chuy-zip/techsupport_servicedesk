@@ -20,7 +20,7 @@ Escenarios comprobados de punta a punta y su resultado esperado. Las reglas est�
 | CU-04 Reloj de cliente Normal | Cliente Normal reporta un sábado | La primera respuesta vence el lunes, dentro del horario de atención |
 | CU-05 Caso que no está en la lista | Elegir "Otro problema con…" | Se crea sin bloquear; el servicio queda correcto |
 | CU-06 Solicitud con autorización | Elegir S-3 y responder que será ADMIN | El ticket avisa que necesita autorización |
-| CU-07 Etiquetas | Escribir "Excel, Carga lenta, excel" | Se guardan "excel" y "carga lenta", sin repetir |
+| CU-07 Etiquetas | Marcar "excel" y "lentitud" en el formulario | Se guardan las dos y se ven en el detalle y en la tarjeta |
 | CU-08 Ver su ticket | Abrir el detalle | Ve estado, quién lo atiende y "Primera respuesta antes de…"; no ve prioridad, impacto, urgencia, nivel ni medidor |
 | CU-09 Conversar | Agregar un comentario | Su mensaje sale a la derecha como "Tú"; los agentes aparecen como "Equipo de soporte" |
 | CU-10 Saber por qué cambió su ticket | El agente resuelve y luego reabre | Ve las notas con etiqueta Solución y Reapertura |
@@ -84,7 +84,7 @@ Validados el 31 de octubre de 2026 con el mismo método, contra la rama `dev`. E
 | CU-37 Aprobar sin rol | Un agente busca el botón de aprobar | No aparece |
 | CU-38 Filtrar por otra persona | Un agente pone en la URL el filtro de otro agente | Se ignora; no ve la carga de otros |
 | CU-39 URL inventada | `prioridad=P9` o un cliente que no existe | Se ignora sin romper la página |
-| CU-40 Más de 5 etiquetas | Escribir seis | Error junto al campo, sin perder lo escrito |
+| CU-40 Más de 5 etiquetas | Marcar cinco y mirar las demás | Las fichas restantes se deshabilitan hasta desmarcar una |
 | CU-41 Supervisión pide aprobación | Supervisión o administración abren un ticket | No ven "Pedir aprobación": son quienes aprueban |
 | CU-55 Estadísticas y problemas para clientes | Un cliente abre `/estadisticas` o `/problemas` | Vuelve a "Mis tickets" sin ver datos |
 | CU-56 Nivel 1 en un problema | Agente de nivel 1 abre un problema | Ve la causa y el workaround, sin controles para cambiarlo |

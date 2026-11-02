@@ -114,7 +114,7 @@ const DAY = 24 * HOUR;
 const specs: Spec[] = [
   // Cerrados, de días atrás: sirven de historia y para las estadísticas
   {
-    age: 7 * DAY, company: "UNI", item: "I-8", tags: ["lista", "portal"],
+    age: 7 * DAY, company: "UNI", item: "I-8", tags: ["portal"],
     title: "La lista de tickets no carga",
     description: "Al entrar al portal, la lista de tickets se queda en blanco para todo el equipo de la sucursal.",
     steps: [
@@ -228,7 +228,7 @@ const specs: Spec[] = [
     ],
   },
   {
-    age: DAY, company: "ROB", item: "I-9", tags: ["excel", "carga lenta"],
+    age: DAY, company: "ROB", item: "I-9", tags: ["excel", "lentitud"],
     title: "La carga de Excel se queda procesando",
     description: "Subimos el archivo con los tickets del mes y lleva horas en procesando.",
     steps: [
@@ -239,7 +239,7 @@ const specs: Spec[] = [
     ],
   },
   {
-    age: 400, company: "ROB", item: "I-13", tags: ["usuarios", "baja"],
+    age: 400, company: "ROB", item: "I-13", tags: ["usuarios"],
     impact: "LOW", urgency: "MEDIUM",
     title: "Necesitamos dar de baja a un usuario que ya no trabaja con nosotros",
     description: "Una persona con permisos de administración dejó la empresa y su cuenta debe darse de baja hoy.",
@@ -281,7 +281,7 @@ const specs: Spec[] = [
     ],
   },
   {
-    age: 60, company: "ALT", item: "S-3", approval: true, tags: ["usuarios", "alta"],
+    age: 60, company: "ALT", item: "S-3", approval: true, tags: ["usuarios"],
     title: "Alta de un usuario para el área de contabilidad",
     description: "Necesitamos una cuenta nueva para una persona que entra a contabilidad el lunes.",
     steps: [
@@ -303,7 +303,7 @@ const specs: Spec[] = [
     ],
   },
   {
-    age: 150, company: "ALT", item: "I-8", tags: ["lista", "portal"],
+    age: 150, company: "ALT", item: "I-8", tags: ["portal"],
     title: "La lista de tickets no carga a la mitad del equipo",
     description: "A la mitad de las personas les aparece la lista vacía; a la otra mitad sí les carga.",
     steps: [
@@ -326,7 +326,7 @@ const specs: Spec[] = [
     description: "Al abrir el reporte semanal la pantalla se queda cargando.",
   },
   {
-    age: 40, company: "ALT", item: "S-3", approval: true, tags: ["usuarios", "admin"],
+    age: 40, company: "ALT", item: "S-3", approval: true, tags: ["usuarios"],
     title: "Alta de un administrador para el área de finanzas",
     description: "Necesitamos dar de alta a una persona nueva con rol de administración para finanzas.",
   },

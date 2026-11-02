@@ -157,7 +157,9 @@ Requiere autorización lo que el agente no debe ejecutar solo: lo que cambia acc
 
 ## Etiquetas
 
-Campo opcional al crear el ticket, separadas por comas, como "login, error 500". Se guardan en minúscula y sin repetir, para que "Login" y "login" cuenten igual en las estadísticas. Máximo 5, de hasta 30 caracteres cada una. Se ven en el detalle y en las tarjetas del tablero.
+Campo opcional al crear el ticket. Se eligen de una lista cerrada de 13, como `login`, `error 500` o `lentitud`, hasta un máximo de 5. La lista evita etiquetas repetidas con otro nombre y hace que las estadísticas por etiqueta cuenten lo mismo. El servidor descarta cualquier valor que no esté en la lista. Se ven en el detalle y en las tarjetas del tablero.
+
+Para agregar una etiqueta se edita la lista `TAGS` de `src/lib/tickets/tags.ts`. Los tickets anteriores conservan las suyas.
 
 ## Tablero
 

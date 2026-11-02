@@ -4,8 +4,10 @@ import { useActionState, useEffect, useState, type ReactNode } from "react";
 import type { Impact, ServiceKind, TicketType, Urgency } from "@/generated/prisma/client";
 import { Button } from "@/components/ui/button";
 import { Choice, ChoiceGroup } from "@/components/ui/choice";
+import { ChipCheckbox } from "@/components/ui/chip-checkbox";
 import { TextArea, TextField } from "@/components/ui/text-field";
 import { impactOptions, serviceKindNames, typeNames, urgencyOptions } from "@/lib/tickets/labels";
+import { MAX_TAGS, TAGS } from "@/lib/tickets/tags";
 import { createTicket, type CreateTicketState } from "./actions";
 
 export type FormService = {
@@ -50,7 +52,7 @@ export function NewTicketForm({ services }: { services: FormService[] }) {
   const [itemId, setItemId] = useState<string>();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [tags, setTags] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
   const [impact, setImpact] = useState<Impact>();
   const [urgency, setUrgency] = useState<Urgency>();
   const [approval, setApproval] = useState<string>();
@@ -71,7 +73,7 @@ export function NewTicketForm({ services }: { services: FormService[] }) {
       setItemId(undefined);
       setTitle("");
       setDescription("");
-      setTags("");
+      setTags([]);
       setImpact(undefined);
       setUrgency(undefined);
       setApproval(undefined);
@@ -169,17 +171,29 @@ export function NewTicketForm({ services }: { services: FormService[] }) {
               maxLength={4000}
               error={errors.description}
             />
-            <TextField
-              label="Etiquetas, opcional"
-              name="tags"
-              value={tags}
-              onChange={(e) => {
-                setTags(e.target.value);
-                touch("tags");
-              }}
-              hint="Separadas por comas. Por ejemplo: login, error 500"
-              error={errors.tags}
-            />
+            <fieldset className="flex flex-col gap-2">
+              <legend className="mb-1 text-caption font-medium text-muted">Etiquetas, opcional</legend>
+              <div className="flex flex-wrap gap-2">
+                {TAGS.map((tag) => (
+                  <ChipCheckbox
+                    key={tag}
+                    name="tags"
+                    value={tag}
+                    label={tag}
+                    checked={tags.includes(tag)}
+                    disabled={!tags.includes(tag) && tags.length >= MAX_TAGS}
+                    onChange={() => {
+                      setTags((current) =>
+                        current.includes(tag) ? current.filter((t) => t !== tag) : [...current, tag],
+                      );
+                      touch("tags");
+                    }}
+                  />
+                ))}
+              </div>
+              <span className="text-caption text-muted">Hasta {MAX_TAGS}. Ayudan a encontrar y agrupar tickets parecidos.</span>
+              {errors.tags && <span className="text-caption text-p1">{errors.tags}</span>}
+            </fieldset>
           </Section>
 
           {item.type === "INCIDENT" && (
